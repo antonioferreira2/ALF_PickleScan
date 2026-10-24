@@ -631,6 +631,195 @@ def check_gguf(path: Path):
     return OK, (lambda v: lambda lang: t("d_gguf_ok", lang, v=v))(v)
 
 
+# ------------------------------------------------- metadados GGUF
+#
+# O cabeçalho GGUF traz pares chave/valor. Um deles, tokenizer.chat_template,
+# é um texto Jinja que o motor de inferência renderiza: é a única parte de um
+# GGUF que pode instruir o programa a fazer algo. Lemos apenas o cabeçalho e os
+# metadados; os tensores nunca são lidos nem carregados para memória.
+
+GGUF_STRING, GGUF_ARRAY = 8, 9
+GGUF_SCALARS = {
+    0: ("<B", 1), 1: ("<b", 1), 2: ("<H", 2), 3: ("<h", 2),
+    4: ("<I", 4), 5: ("<i", 4), 6: ("<f", 4), 7: ("<B", 1),
+    10: ("<Q", 8), 11: ("<q", 8), 12: ("<d", 8),
+}
+GGUF_MAX_STRING = 1024 * 1024   # 1 MB por texto
+GGUF_MAX_KV = 100000            # pares chave/valor
+GGUF_MAX_ARRAY = 5000000        # elementos por array (vocabulários reais são menores)
+GGUF_TEMPLATE_KEY = "tokenizer.chat_template"
+
+# Marcas de execução ou exfiltração dentro de um template Jinja.
+TEMPLATE_MARKERS = re.compile(
+    r"(?i)(\bimport\b|\bos\.|subprocess|__import__|\beval\b|\bexec\b|curl|wget|https?://)")
+# Razões que, juntas às marcas acima, dão vermelho em vez de amarelo.
+TEMPLATE_STRONG = {"why_download", "why_shell", "why_net", "why_code"}
+
+
+class _GGUFProblem(Exception):
+    """Leitura que não se pode concluir: o ficheiro fica AMARELO."""
+
+    def __init__(self, chave: str, **kw):
+        super().__init__(chave)
+        self.chave, self.kw = chave, kw
+
+
+class _GGUFReader:
+    """Lê o cabeçalho e os metadados sem nunca sair dos limites do ficheiro."""
+
+    def __init__(self, fh, size: int):
+        self.fh = fh
+        self.size = size
+
+    def _bytes(self, n: int) -> bytes:
+        posicao = self.fh.tell()
+        if n < 0 or posicao + n > self.size:
+            raise _GGUFProblem("d_gguf_incomplete")
+        dados = self.fh.read(n)
+        if len(dados) != n:
+            raise _GGUFProblem("d_gguf_incomplete")
+        return dados
+
+    def saltar(self, n: int) -> None:
+        posicao = self.fh.tell()
+        if n < 0 or posicao + n > self.size:
+            raise _GGUFProblem("d_gguf_incomplete")
+        self.fh.seek(posicao + n)
+
+    def u32(self) -> int:
+        return struct.unpack("<I", self._bytes(4))[0]
+
+    def u64(self) -> int:
+        return struct.unpack("<Q", self._bytes(8))[0]
+
+    def numero(self, fmt: str) -> int:
+        return struct.unpack(fmt, self._bytes(struct.calcsize(fmt)))[0]
+
+    def texto(self) -> str:
+        n = self.u64()
+        if n > GGUF_MAX_STRING:
+            raise _GGUFProblem("d_gguf_bigstring")
+        return self._bytes(n).decode("utf-8", "replace")
+
+    def valor(self, tipo: int, guardar: bool = True):
+        """Lê um valor. Com guardar=False só avança, sem materializar o conteúdo."""
+        if tipo == GGUF_STRING:
+            n = self.u64()
+            if n > GGUF_MAX_STRING:
+                raise _GGUFProblem("d_gguf_bigstring")
+            if not guardar:
+                self.saltar(n)
+                return None
+            return self._bytes(n).decode("utf-8", "replace")
+        if tipo == GGUF_ARRAY:
+            subtipo = self.u32()
+            if subtipo == GGUF_ARRAY:
+                raise _GGUFProblem("d_gguf_nested")
+            n = self.u64()
+            if n > GGUF_MAX_ARRAY:
+                raise _GGUFProblem("d_gguf_bigarray", limit=GGUF_MAX_ARRAY)
+            for _ in range(int(n)):
+                self.valor(subtipo, guardar=False)
+            return None
+        if tipo not in GGUF_SCALARS:
+            raise _GGUFProblem("d_gguf_type", tipo=tipo)
+        fmt, tamanho = GGUF_SCALARS[tipo]
+        dados = self._bytes(tamanho)
+        return struct.unpack(fmt, dados)[0] if guardar else None
+
+
+def read_gguf_metadata(path: Path):
+    """Devolve (metadados, problema).
+
+    `problema` é None quando a leitura terminou, ou (chave_de_traducao, valores).
+    Para no fim dos pares chave/valor: os tensores ficam por ler.
+    """
+    metadados = {}
+    tamanho = path.stat().st_size
+    try:
+        with open(path, "rb") as fh:
+            if fh.read(4) != b"GGUF":
+                return {}, ("d_gguf_magic", {})
+            bruto = fh.read(4)
+            if len(bruto) < 4:
+                return {}, ("d_gguf_incomplete", {})
+            versao = struct.unpack("<I", bruto)[0]
+            if versao not in (2, 3):
+                return {}, ("d_gguf_ver", {"v": versao})
+            leitor = _GGUFReader(fh, tamanho)
+            fmt = "<Q" if versao == 3 else "<I"
+            leitor.saltar(struct.calcsize(fmt))         # tensor_count
+            kv = leitor.numero(fmt)
+            if kv > GGUF_MAX_KV:
+                return {}, ("d_gguf_too_many", {"count": kv})
+            for _ in range(int(kv)):
+                chave = leitor.texto()
+                tipo = leitor.u32()
+                metadados[chave] = leitor.valor(tipo)
+    except _GGUFProblem as ex:
+        return metadados, (ex.chave, ex.kw)
+    except (OSError, struct.error):
+        return metadados, ("d_gguf_incomplete", {})
+    return metadados, None
+
+
+def _linhas_suspeitas(texto: str, limite: int = 3) -> list:
+    """Linhas do template que contêm comandos ou marcas de execução."""
+    linhas = []
+    for linha in str(texto).splitlines():
+        if TEMPLATE_MARKERS.search(linha) or any(p.search(linha) for p, _ in PAYLOAD_RULES):
+            linhas.append(_texto_curto(linha, 160))
+            if len(linhas) >= limite:
+                break
+    return linhas
+
+
+def gguf_checks(path: Path) -> list:
+    """Metadados e template de chat de um GGUF já validado."""
+    checks = []
+    metadados, problema = read_gguf_metadata(path)
+    if problema:
+        chave, valores = problema
+        checks.append(_check("Metadados GGUF", AVISO, "chk_gguf_meta",
+                             (lambda c, v: lambda lang: t(c, lang, **v))(chave, valores)))
+    else:
+        checks.append(_check("Metadados GGUF", OK, "chk_gguf_meta",
+                             (lambda n: lambda lang: t("d_gguf_meta_ok", lang, count=n))(
+                                 len(metadados))))
+
+    template = metadados.get(GGUF_TEMPLATE_KEY)
+    if not isinstance(template, str) or not template:
+        checks.append(_check("Template de chat (GGUF)", OK, "chk_gguf_template",
+                             lambda lang: t("d_gguf_tpl_none", lang)))
+        return checks
+
+    razoes = tuple(why for pattern, why in PAYLOAD_RULES if pattern.search(template))
+    marcas = bool(TEMPLATE_MARKERS.search(template))
+    fortes = [w for w in razoes if w in TEMPLATE_STRONG]
+    cifrado = bool(BASE64_BLOCK.search(template))
+    if marcas and (fortes or cifrado):
+        estado = REPROVADO
+    elif marcas or fortes or cifrado:
+        estado = AVISO
+    else:
+        estado = OK
+    tamanho, linhas = len(template), tuple(_linhas_suspeitas(template))
+
+    def _detalhe(lang, razoes=razoes, linhas=linhas, tamanho=tamanho, estado=estado):
+        if estado == OK:
+            return t("d_gguf_tpl_ok", lang, count=tamanho)
+        partes = [t("d_gguf_tpl_found", lang, count=tamanho)]
+        if razoes:
+            partes.append(t("d_gguf_tpl_reasons", lang,
+                            reasons="; ".join(t(w, lang) for w in razoes)))
+        partes += list(linhas)
+        partes.append(t("d_gguf_tpl_note", lang))
+        return "\n".join(partes)
+
+    checks.append(_check("Template de chat (GGUF)", estado, "chk_gguf_template", _detalhe))
+    return checks
+
+
 # ------------------------------------------------------- orquestração
 
 def verificar(path: Path, sha_ref, whitelist: set):
@@ -677,6 +866,10 @@ def verificar(path: Path, sha_ref, whitelist: set):
     elif fmt == "gguf":
         est, detalhe_fn = check_gguf(path)
         checks.append(_check("Estrutura GGUF", est, "chk_gguf", detalhe_fn))
+        if est == OK:
+            # Só se o cabeçalho for de uma versão conhecida é que faz sentido
+            # ler os metadados: noutra versão o layout pode ser diferente.
+            checks += gguf_checks(path)
     else:
         checks.append(_check("Formato", AVISO, "chk_unknownfmt",
                              lambda lang: t("d_unknownfmt", lang)))

@@ -46,6 +46,25 @@ def make_safetensors(path: Path, header: dict, body: bytes) -> Path:
     return write(path, struct.pack("<Q", len(raw)) + raw + body)
 
 
+def gguf_string(texto: str) -> bytes:
+    dados = texto.encode("utf-8")
+    return struct.pack("<Q", len(dados)) + dados
+
+
+def gguf_kv(chave: str, valor: str, tipo: int = 8) -> bytes:
+    """Par chave/valor; tipo 8 é STRING. Sem valor quando o tipo não é válido."""
+    corpo = gguf_string(valor) if tipo == 8 else b""
+    return gguf_string(chave) + struct.pack("<I", tipo) + corpo
+
+
+def make_gguf(path: Path, kvs=(), version: int = 3, kv_count=None) -> Path:
+    fmt = "<Q" if version == 3 else "<I"
+    total = len(kvs) if kv_count is None else kv_count
+    cabecalho = (b"GGUF" + struct.pack("<I", version)
+                 + struct.pack(fmt, 0) + struct.pack(fmt, total))
+    return write(path, cabecalho + b"".join(kvs))
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -391,6 +410,82 @@ class TestGGUF(Base):
         p = write(self.tmp / "modelo.gguf", b"NOPE" + struct.pack("<I", 3))
         estado, _detalhe = core.check_gguf(p)
         self.assertEqual(estado, core.REPROVADO)
+
+
+class TestGGUFTemplate(Base):
+    def test_metadata_and_benign_template_are_green(self):
+        p = make_gguf(self.tmp / "modelo.gguf", [
+            gguf_kv("general.name", "modelo de teste"),
+            gguf_kv(core.GGUF_TEMPLATE_KEY,
+                    "{% for m in messages %}{{ m['content'] }}{% endfor %}"),
+        ])
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Metadados GGUF"), core.OK)
+        self.assertEqual(self.state_of(checks, "Template de chat (GGUF)"), core.OK)
+        self.assertEqual(label, "VERDE", checks)
+
+    def test_v2_header_is_read(self):
+        p = make_gguf(self.tmp / "v2.gguf", [gguf_kv("general.name", "teste")], version=2)
+        metadados, problema = core.read_gguf_metadata(p)
+        self.assertIsNone(problema)
+        self.assertEqual(metadados["general.name"], "teste")
+
+    def test_array_of_strings_is_skipped(self):
+        itens = b"".join(gguf_string(x) for x in ("a", "b", "c"))
+        array = (gguf_string("tokenizer.ggml.tokens") + struct.pack("<I", 9)
+                 + struct.pack("<I", 8) + struct.pack("<Q", 3) + itens)
+        p = make_gguf(self.tmp / "array.gguf",
+                      [array, gguf_kv(core.GGUF_TEMPLATE_KEY, "{{ messages }}")])
+        metadados, problema = core.read_gguf_metadata(p)
+        self.assertIsNone(problema)
+        self.assertIn(core.GGUF_TEMPLATE_KEY, metadados)
+
+    def test_template_with_code_is_red(self):
+        p = make_gguf(self.tmp / "mau.gguf", [
+            gguf_kv(core.GGUF_TEMPLATE_KEY, "{{ __import__('os').system('id') }}"),
+        ])
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Template de chat (GGUF)"), core.REPROVADO)
+        self.assertEqual(label, "VERMELHO", checks)
+
+    def test_template_with_marker_only_is_yellow(self):
+        p = make_gguf(self.tmp / "duvidoso.gguf", [
+            gguf_kv(core.GGUF_TEMPLATE_KEY, "{{ os.hostname }}"),
+        ])
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Template de chat (GGUF)"), core.AVISO)
+        self.assertEqual(label, "AMARELO", checks)
+
+    def test_truncated_metadata_is_yellow(self):
+        p = write(self.tmp / "cortado.gguf",
+                  b"GGUF" + struct.pack("<I", 3) + struct.pack("<QQ", 0, 1)
+                  + gguf_string(core.GGUF_TEMPLATE_KEY) + struct.pack("<I", 8)
+                  + struct.pack("<Q", 1000) + b"abc")
+        metadados, problema = core.read_gguf_metadata(p)
+        self.assertIsNotNone(problema)
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Metadados GGUF"), core.AVISO)
+        self.assertEqual(label, "AMARELO", checks)
+
+    def test_absurd_kv_count_is_yellow_without_crashing(self):
+        p = make_gguf(self.tmp / "absurdo.gguf", [], kv_count=10 ** 7)
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Metadados GGUF"), core.AVISO)
+        self.assertEqual(label, "AMARELO", checks)
+
+    def test_nested_array_is_yellow(self):
+        aninhado = (gguf_string("x") + struct.pack("<I", 9)
+                    + struct.pack("<I", 9) + struct.pack("<Q", 0))
+        p = make_gguf(self.tmp / "aninhado.gguf", [aninhado])
+        _meta, problema = core.read_gguf_metadata(p)
+        self.assertEqual(problema[0], "d_gguf_nested")
+
+    def test_unknown_type_is_yellow(self):
+        p = make_gguf(self.tmp / "tipo.gguf", [gguf_kv("x", "", tipo=99)])
+        _meta, problema = core.read_gguf_metadata(p)
+        self.assertEqual(problema[0], "d_gguf_type")
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(label, "AMARELO", checks)
 
 
 class TestMisc(Base):
