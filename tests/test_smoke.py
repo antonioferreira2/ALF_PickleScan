@@ -388,6 +388,42 @@ class TestSafetensors(Base):
         estado, _detalhe = core.check_safetensors(p)
         self.assertEqual(estado, core.REPROVADO)
 
+    def test_tensor_size_matching_shape_is_green(self):
+        p = make_safetensors(self.tmp / "certo.safetensors",
+                             {"w": {"dtype": "F32", "shape": [2, 2],
+                                    "data_offsets": [0, 16]}},
+                             b"\x00" * 16)
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Estrutura safetensors"), core.OK)
+        self.assertEqual(label, "VERDE", checks)
+
+    def test_tensor_size_not_matching_shape_is_red(self):
+        p = make_safetensors(self.tmp / "tamanho.safetensors",
+                             {"w": {"dtype": "F32", "shape": [2, 2],
+                                    "data_offsets": [0, 12]}},
+                             b"\x00" * 12)
+        estado, detalhe = core.check_safetensors(p)
+        self.assertEqual(estado, core.REPROVADO)
+        self.assertIn("w", detalhe("pt"))
+        self.assertIn("16", detalhe("pt"))
+
+    def test_overlapping_tensors_are_red(self):
+        p = make_safetensors(self.tmp / "sobreposto.safetensors",
+                             {"a": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]},
+                              "b": {"dtype": "F32", "shape": [1], "data_offsets": [2, 6]}},
+                             b"\x00" * 6)
+        estado, detalhe = core.check_safetensors(p)
+        self.assertEqual(estado, core.REPROVADO)
+        self.assertIn("a", detalhe("pt"))
+
+    def test_unknown_dtype_is_yellow(self):
+        p = make_safetensors(self.tmp / "dtype.safetensors",
+                             {"w": {"dtype": "XYZ", "shape": [1], "data_offsets": [0, 4]}},
+                             b"\x00" * 4)
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Estrutura safetensors"), core.AVISO)
+        self.assertEqual(label, "AMARELO", checks)
+
     def test_invalid_json_header(self):
         p = write(self.tmp / "modelo.safetensors", struct.pack("<Q", 4) + b"nope")
         estado, _detalhe = core.check_safetensors(p)

@@ -590,6 +590,22 @@ def pickle_checks(path: Path, whitelist: set) -> list:
 
 # ------------------------------------------------- safetensors e GGUF
 
+# Bytes por elemento em safetensors. Um dtype fora desta lista não é erro:
+# fica AMARELO porque o tamanho não pode ser validado.
+DTYPE_SIZES = {
+    "F64": 8, "F32": 4, "F16": 2, "BF16": 2, "I64": 8, "I32": 4, "I16": 2,
+    "I8": 1, "U8": 1, "BOOL": 1, "F8_E4M3": 1, "F8_E5M2": 1,
+}
+
+
+def _numel(shape) -> int:
+    """Número de elementos de um tensor, a partir da shape."""
+    total = 1
+    for lado in shape:
+        total *= int(lado)
+    return total
+
+
 def check_safetensors(path: Path):
     size = path.stat().st_size
     with open(path, "rb") as f:
@@ -606,6 +622,9 @@ def check_safetensors(path: Path):
                                                           err=err))(str(e))
     limite = size - 8 - n
     count = 0
+    intervalos = []
+    problemas = []      # inconsistências: REPROVADO
+    avisos = []         # não foi possível validar: AVISO
     for nome, info in cab.items():
         if nome == "__metadata__":
             continue
@@ -616,6 +635,43 @@ def check_safetensors(path: Path):
         if not (0 <= ini <= fim <= limite):
             return REPROVADO, (lambda n_: lambda lang: t("d_st_range", lang, name=n_))(nome)
         count += 1
+        intervalos.append((ini, fim, nome))
+
+        # O espaço reservado tem de bater certo com shape x dtype. Um ficheiro
+        # truncado ou remontado à mão falha aqui.
+        dtype = str(info.get("dtype", "")).upper()
+        esperado = DTYPE_SIZES.get(dtype)
+        shape = info.get("shape")
+        if esperado is None:
+            avisos.append(("d_st_dtype", {"name": nome, "dtype": info.get("dtype", "?")}))
+            continue
+        if not isinstance(shape, list) or not all(
+                isinstance(x, int) and not isinstance(x, bool) and x >= 0 for x in shape):
+            avisos.append(("d_st_shape", {"name": nome}))
+            continue
+        previsto = _numel(shape) * esperado
+        if previsto != fim - ini:
+            problemas.append(("d_st_size", {"name": nome, "expected": previsto,
+                                            "found": fim - ini}))
+
+    intervalos.sort()
+    for (_i1, f1, n1), (i2, _f2, n2) in zip(intervalos, intervalos[1:]):
+        if i2 < f1:
+            problemas.append(("d_st_overlap", {"a": n1, "b": n2}))
+            break
+
+    if problemas:
+        chave, valores = problemas[0]
+        resto = len(problemas) - 1
+
+        def _detalhe(lang, chave=chave, valores=valores, resto=resto):
+            texto = t(chave, lang, **valores)
+            return texto + (("\n" + t("d_st_more", lang, count=resto)) if resto else "")
+
+        return REPROVADO, _detalhe
+    if avisos:
+        chave, valores = avisos[0]
+        return AVISO, (lambda c, v: lambda lang: t(c, lang, **v))(chave, valores)
     return OK, (lambda c: lambda lang: t("d_safetensors_ok", lang, count=c))(count)
 
 
