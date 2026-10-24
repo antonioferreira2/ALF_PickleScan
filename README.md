@@ -137,7 +137,7 @@ Only what is needed to use, build and improve the tool is published here:
 | `build_exe.bat`, `build_linux.sh` | Reproducible builds for Windows and Linux |
 | `tests/test_smoke.py` | Automated tests with harmless generated samples |
 | `screenshots/` | Images used in the documentation |
-| `README*.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE` | Documentation and licence |
+| `README*.md`, `CONTRIBUTING*.md`, `SECURITY.md`, `LICENSE` | Documentation and licence |
 | `.github/workflows/` | Automated tests and the release build for both platforms |
 
 **Not** in the repository, on purpose:
@@ -168,7 +168,7 @@ New here? Start with a **`good first issue`**: small, well-described tasks for f
 - Add automated tests with harmless sample files.
 - Review one of the README translations if you are a native speaker.
 
-To report a false positive, open an issue with the model's public link, the version you used, and the check that was flagged. Do not upload private model files. For the full process, see [CONTRIBUTING.md](CONTRIBUTING.md).
+To report a false positive, open an issue with the model's public link, the version you used, and the check that was flagged. Do not upload private model files. For the full process, see [CONTRIBUTING.md](CONTRIBUTING.md) — also available in [Português](CONTRIBUTING.pt-PT.md), [Français](CONTRIBUTING.fr.md), [Español](CONTRIBUTING.es.md), [Italiano](CONTRIBUTING.it.md) and [中文](CONTRIBUTING.zh.md).
 
 ## Security
 
