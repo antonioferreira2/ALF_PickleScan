@@ -47,7 +47,7 @@ jobs:
           subject-path: dist/ALF_picklescan-windows-x64.exe
 
       - name: Guardar como artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ALF_picklescan-windows
           path: |
@@ -107,7 +107,7 @@ jobs:
           echo "GUI arrancou e manteve-se estável durante 15 s."
 
       - name: Guardar como artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ALF_picklescan-linux
           path: |
