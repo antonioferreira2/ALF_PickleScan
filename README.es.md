@@ -114,8 +114,10 @@ Un archivo puede superar la comprobación del hash y seguir siendo hostil. Aquí
 - **El análisis de pickle usa una lista de funciones peligrosas conocidas.** Una carga útil nueva, fuera de la lista, puede pasar. Las llamadas sin importaciones identificables se marcan en amarillo por ese motivo.
 - **Confiar en el hash.** El hash demuestra que el archivo coincide con lo publicado, no que quien lo publicó sea de fiar.
 - **GGUF y safetensors solo se validan estructuralmente.** Eso confirma que el archivo está bien formado, no que los pesos sean buenos u honestos.
+- **No se detectan puertas traseras en los pesos.** Los escáneres comprueban si un archivo ejecuta código al cargarse. Un modelo envenenado no necesita ejecutar código: puede comportarse mal solo cuando se activa, y puede ordenar a un agente local que lea archivos o envíe datos a algún sitio. La herramienta no puede verlo.
+- **Los servidores locales y los agentes forman parte del riesgo.** Mantén los servidores de inferencia locales (por ejemplo, Ollama) ligados a `127.0.0.1`, no los expongas a la red sin autenticación, y mantén las credenciales y los archivos `.env` fuera del alcance de cualquier agente que ejecute un modelo.
 
-Para modelos que uses con herramientas o con acceso a datos (agentes, asistentes locales con acceso a archivos), **ejecútalos aislados**: un contenedor o una máquina virtual sin red y sin credenciales.
+Para modelos que uses con herramientas o con acceso a datos (agentes, asistentes locales con acceso a archivos), **ejecútalos aislados**: un contenedor o una máquina virtual sin red y sin credenciales. Usa, siempre que sea posible, los pesos oficiales publicados por el autor del modelo.
 
 ## Lista blanca de importaciones
 

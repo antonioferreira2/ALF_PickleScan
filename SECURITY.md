@@ -15,6 +15,10 @@ Inclui, se possível:
 
 Um modelo legítimo marcado como perigoso, ou um modelo malicioso que passou sem alertas, não é necessariamente uma vulnerabilidade, mas queremos saber. Usa as [Issues](https://github.com/antonioferreira2/ALF_PickleScan/issues) para isto, indicando o modelo (nome e link público) e o detalhe da verificação. Não envies pesos de modelos privados.
 
+## Âmbito da análise
+
+O ALF_picklescan verifica o hash, a estrutura e os imports dos ficheiros, incluindo o chat template dos GGUF. Não analisa o comportamento dos modelos, nem deteta backdoors nos pesos. Um relatório verde não significa que o modelo é seguro. Ver a secção Limitações do README.
+
 ## Versões suportadas
 
 Apenas a versão mais recente publicada em [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases) recebe correções.

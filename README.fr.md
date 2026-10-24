@@ -114,8 +114,10 @@ Un fichier peut passer le contrôle d'empreinte et rester hostile. Ici, l'emprei
 - **L'analyse des pickles utilise une liste de fonctions dangereuses connues.** Une charge utile nouvelle, absente de la liste, peut passer. Les appels sans import identifiable sont marqués en jaune pour cette raison.
 - **Faire confiance à l'empreinte.** L'empreinte prouve que le fichier correspond à ce qui a été publié, pas que l'auteur est digne de confiance.
 - **GGUF et safetensors ne sont validés que structurellement.** Cela confirme que le fichier est bien formé, pas que les poids sont bons ou honnêtes.
+- **Les portes dérobées dans les poids ne sont pas détectées.** Les scanners vérifient si un fichier exécute du code au chargement. Un modèle empoisonné n'a pas besoin d'exécuter du code : il peut se comporter mal seulement lorsqu'il est déclenché, et il peut ordonner à un agent local de lire des fichiers ou d'envoyer des données quelque part. L'outil ne peut pas le voir.
+- **Les serveurs locaux et les agents font partie du risque.** Gardez les serveurs d'inférence locaux (par exemple Ollama) liés à `127.0.0.1`, ne les exposez pas au réseau sans authentification, et gardez les identifiants et les fichiers `.env` hors de portée de tout agent qui exécute un modèle.
 
-Pour les modèles utilisés avec des outils ou ayant accès à des données (agents, assistants locaux avec accès aux fichiers), **exécutez-les isolés** : un conteneur ou une machine virtuelle sans réseau et sans identifiants.
+Pour les modèles utilisés avec des outils ou ayant accès à des données (agents, assistants locaux avec accès aux fichiers), **exécutez-les isolés** : un conteneur ou une machine virtuelle sans réseau et sans identifiants. Utilisez, dans la mesure du possible, les poids officiels publiés par l'auteur du modèle.
 
 ## Liste blanche d'imports
 
