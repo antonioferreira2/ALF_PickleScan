@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Obter os artefactos
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artefactos
           merge-multiple: true
