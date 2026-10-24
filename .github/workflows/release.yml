@@ -126,7 +126,7 @@ jobs:
           merge-multiple: true
 
       - name: Publicar na release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             artefactos/ALF_picklescan-windows-x64.exe
