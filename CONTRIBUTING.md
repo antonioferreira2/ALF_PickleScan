@@ -1,16 +1,19 @@
-# Como contribuir
+# Contributing
 
-Obrigado por querer ajudar. Este projeto existe para tornar a verificação de modelos de IA acessível a qualquer pessoa, por isso valorizamos clareza, simplicidade e honestidade sobre o que a ferramenta faz e não faz.
+Thanks for wanting to help. This project exists to make checking AI model files accessible to anyone, so we value clarity, simplicity and honesty about what the tool does and does not do.
 
-## Por onde começar
+Available in: **English** · [Português (PT)](CONTRIBUTING.pt-PT.md) · [Français](CONTRIBUTING.fr.md) · [Español](CONTRIBUTING.es.md) · [Italiano](CONTRIBUTING.it.md) · [中文](CONTRIBUTING.zh.md)
 
-- **`good first issue`**: tarefas pequenas, com contexto suficiente para começar. Estão na secção Issues.
-- **`help wanted`**: tarefas maiores para quem já conhece o projeto.
-- Antes de começar uma tarefa grande, abre uma issue ou uma discussão para alinhar a abordagem.
+> ⚠️ **This tool does not guarantee that a model is safe.** No contribution may weaken or hide that warning: it stays in the interface, in the reports and in the documentation, in every language.
 
-## Preparar o ambiente
+## Before you start
 
-```
+- **`good first issue`**: small tasks with enough context to start. **`help wanted`** marks the larger ones.
+- Open an issue or a discussion before starting something big, so the approach can be agreed first.
+
+## Run the project from the source code
+
+```text
 git clone https://github.com/antonioferreira2/ALF_PickleScan.git
 cd ALF_PickleScan
 python -m venv .venv
@@ -19,37 +22,71 @@ pip install -r requirements.txt
 python ALF_picklescan_gui.py
 ```
 
-A versão do picklescan vem do `requirements.txt`, para não haver duas cópias do número. Também podes abrir a interface já com um modelo, o mesmo que arrastar o ficheiro para cima do executável:
+Python **3.11 or newer** is needed to build the executables; the tests run on 3.11 and 3.12, on Windows and Linux. On Linux the interface needs `python3-tk` (`sudo apt install python3-tk`).
 
+`requirements.txt` is the only place where the picklescan version is written: the workflows and the build scripts read it from there, so change it there and nowhere else.
+
+To open the interface with a model already loaded — the same as dropping a file onto the executable:
+
+```text
+python ALF_picklescan_gui.py model.gguf
 ```
-python ALF_picklescan_gui.py modelo.gguf
-```
 
-No Linux, a interface precisa de `python3-tk` (`sudo apt install python3-tk`). Precisa de Python 3.11 ou mais recente para compilar os executáveis.
+## Checks before opening a pull request
 
-## Correr os testes
-
-```
+```text
+python -m py_compile ALF_picklescan.py ALF_picklescan_gui.py i18n.py
 python -m unittest discover -s tests -v
 ```
 
-Os testes geram as suas próprias amostras inofensivas e não precisam de rede. Também correm automaticamente em Windows e Linux a cada push (`.github/workflows/tests.yml`).
+The tests generate their own harmless samples in temporary folders, need no network, and never execute what they inspect. GitHub also runs them on Windows and Linux for every push and pull request (`.github/workflows/tests.yml`).
 
-## Regras
+## What is welcome
 
-1. **Nunca carregues modelos maliciosos para testar.** Os testes devem usar ficheiros inofensivos. Para testar a deteção de pickle, cria um pickle que apenas *referencia* uma função perigosa sem a chamar, como nos exemplos da pasta `tests/` quando existir.
-2. **Não removas avisos de limitação.** A ferramenta não garante segurança e a documentação deve continuar a dizê-lo.
-3. **Mudanças nas traduções:** a interface e as verificações vivem em `i18n.py` (`STRINGS` e `CHECK_STRINGS`). Se alteras um texto, atualiza os seis idiomas. As chaves em falta caem para inglês, mas é melhor evitá-lo — e os testes verificam que nenhum idioma fica incompleto.
-4. **Mudanças na whitelist:** inclui sempre a origem do import (o modelo ou a documentação) no pull request.
-5. **Código simples e legível.** Preferimos bibliotecas padrão de Python a dependências novas.
+- **False positives and false negatives.** Open an issue with the model's public link, the version you used and the check that was flagged.
+- **Tests with harmless sample files** that reproduce a bug or cover a new detection.
+- **Translations**, including a native-speaker review of the READMEs and of this guide.
+- **Whitelist improvements** for popular architectures (Llama, Mistral, Qwen, …), always with the source that justifies the import.
+- **Documentation** fixes and clarifications.
 
-## Pull requests
+## What not to send
 
-- Um pull request por tema.
-- Explica o problema e a solução numa frase ou duas.
-- Confirma que `python -m py_compile ALF_picklescan.py ALF_picklescan_gui.py i18n.py` e `python -m unittest discover -s tests` passam.
-- Se mexeste na interface ou no motor, testa pelo menos em inglês, português e chinês: são os três alfabetos diferentes (latino, latino com acentos e CJK).
+- **Real malicious files**, not even as a test. A test may only *reference* a dangerous function, never call it.
+- **Model weights** that are private, or third-party without permission to share.
+- **Executables**: they belong in [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases).
+- **Generated files**: `ALF_relatorios/`, `build/`, `dist/`, `*.spec` and the local `ALF_whitelist.txt`.
 
-## Código de conduta
+## Security
 
-Sê respeitoso. Critica ideias, não pessoas. Respostas a perguntas básicas são bem-vindas.
+Vulnerabilities go through GitHub's **private vulnerability reporting**: repository **Security** tab, then **Report a vulnerability**. Never a public issue. See [SECURITY.md](SECURITY.md).
+
+A legitimate model flagged as dangerous, or a hostile model that passed every test, is not a vulnerability: that is a normal issue, with the details of the check.
+
+## AI-assisted contributions
+
+- Part of the code and documentation of this project was written with help from AI tools, including the Codebuff agent. The maintainer reviews every change before it reaches `main`, and the Git history keeps the authorship of each commit.
+- **You are responsible for what you submit.** If you use AI to write code, understand it and be able to explain it.
+- **Untested changes are not accepted.** Run the commands above and say in the pull request what you ran.
+- Pull requests that look generated without review may be refused: code that ignores the project's style, tests that assert nothing, generic comments that do not match the code.
+- **Dependabot** updates go through the same review. Nothing enters `main` without passing the tests.
+
+## Review and merge
+
+- The maintainer reviews the pull requests. There is no guaranteed deadline.
+- Changes to the verification logic (analysis layers, verdicts, GGUF and safetensors parsers) need new tests and an explanation in the pull request.
+- Changes that make the check **less strict** are the most scrutinised: when in doubt, the verdict must be yellow, not green.
+- One pull request per topic, with the problem and the solution in a sentence or two.
+
+## Code rules
+
+1. **Never load a malicious model to test.** Create a pickle that only *references* a dangerous function, as the tests already do.
+2. **Do not remove the limitation warnings.** The tool does not guarantee safety, and the documentation must keep saying so.
+3. Text shown to the user lives in `i18n.py`, in the six languages (`en`, `pt`, `fr`, `es`, `it`, `zh`). A missing key falls back to English, but the tests check that no language is incomplete.
+4. Whitelist changes must come with the source of the import (the model or its documentation).
+5. Prefer the Python standard library over new dependencies. picklescan is the only external one.
+6. Keep the code simple and readable: short functions, the `_check()` and `veredicto()` style already used in the project.
+7. If you touch the interface or the engine, test at least in English, Portuguese and Chinese: three different alphabets (Latin, Latin with accents and CJK).
+
+## Code of conduct
+
+Be respectful. Criticise ideas, not people. Questions from newcomers are welcome and deserve an answer.

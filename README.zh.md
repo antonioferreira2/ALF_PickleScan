@@ -70,7 +70,7 @@ gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_Pi
 
 如果 Windows SmartScreen 提示无法识别此应用，请点击 **更多信息 → 仍要运行**。出现该提示是因为可执行文件没有代码签名证书；签名证书每年都需要付费，而这个项目是免费的。请始终先核对哈希值，并与发布页面上公布的一致。
 
-其他平台：源代码可在任何装有 Python 和 Tk 的系统上运行（包括 macOS）。请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 从源代码运行。
+其他平台：源代码可在任何装有 Python 和 Tk 的系统上运行（包括 macOS）。请参阅 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md) 从源代码运行。
 
 ## 如何使用
 
@@ -137,7 +137,7 @@ python ALF_picklescan.py model.gguf --sha256 <hash>
 | `build_exe.bat`、`build_linux.sh` | Windows 和 Linux 的可复现构建 |
 | `tests/test_smoke.py` | 使用临时生成的无害样本的自动化测试 |
 | `screenshots/` | 文档中使用的图片 |
-| `README*.md`、`CONTRIBUTING.md`、`SECURITY.md`、`LICENSE` | 文档和许可证 |
+| `README*.md`、`CONTRIBUTING*.md`、`SECURITY.md`、`LICENSE` | 文档和许可证 |
 | `.github/workflows/` | 自动化测试和两个平台的发布构建 |
 
 **有意不**放在仓库中的内容：
@@ -168,7 +168,7 @@ python ALF_picklescan.py model.gguf --sha256 <hash>
 - 添加使用无害示例文件的自动化测试。
 - 如果你是母语者，请审阅其中一份 README 翻译。
 
-要报告误报，请提交 issue，附上模型的公开链接、你使用的版本以及被标记的检查项。请勿上传私有模型文件。完整流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+要报告误报，请提交 issue，附上模型的公开链接、你使用的版本以及被标记的检查项。请勿上传私有模型文件。完整流程见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md) — 也提供 [English](CONTRIBUTING.md)、[Português](CONTRIBUTING.pt-PT.md)、[Français](CONTRIBUTING.fr.md)、[Español](CONTRIBUTING.es.md)、[Italiano](CONTRIBUTING.it.md) 版本。
 
 ## 安全
 

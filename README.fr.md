@@ -70,7 +70,7 @@ Une attestation valide prouve **qui a compilé** le fichier et à partir de quel
 
 Si Windows SmartScreen indique que l'application n'est pas reconnue, cliquez sur **Informations complémentaires → Exécuter quand même**. Cet avertissement apparaît parce que l'exécutable n'est pas signé numériquement ; un certificat de signature coûte de l'argent chaque année et ce projet est gratuit. Vérifiez toujours l'empreinte et comparez-la à celle publiée sur la page de la version.
 
-Autres plateformes : le code source fonctionne partout où Python et Tk sont disponibles (macOS inclus). Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour l'exécuter depuis les sources.
+Autres plateformes : le code source fonctionne partout où Python et Tk sont disponibles (macOS inclus). Voir [CONTRIBUTING.fr.md](CONTRIBUTING.fr.md) pour l'exécuter depuis les sources.
 
 ## Comment l'utiliser
 
@@ -137,7 +137,7 @@ Seul le nécessaire pour utiliser, compiler et améliorer l'outil est publié ic
 | `build_exe.bat`, `build_linux.sh` | Compilations reproductibles pour Windows et Linux |
 | `tests/test_smoke.py` | Tests automatisés avec des échantillons inoffensifs générés à la volée |
 | `screenshots/` | Images utilisées dans la documentation |
-| `README*.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE` | Documentation et licence |
+| `README*.md`, `CONTRIBUTING*.md`, `SECURITY.md`, `LICENSE` | Documentation et licence |
 | `.github/workflows/` | Tests automatisés et compilation de la version pour les deux plateformes |
 
 **Ne sont pas** dans le dépôt, volontairement :
@@ -168,7 +168,7 @@ Vous débutez ? Commencez par une **`good first issue`** : des tâches courtes e
 - Ajoutez des tests automatisés avec des fichiers d'exemple inoffensifs.
 - Relisez l'une des traductions du README si vous êtes locuteur natif.
 
-Pour signaler un faux positif, ouvrez une issue avec le lien public du modèle, la version utilisée et la vérification signalée. N'envoyez pas de fichiers de modèles privés. Pour le processus complet, voir [CONTRIBUTING.md](CONTRIBUTING.md).
+Pour signaler un faux positif, ouvrez une issue avec le lien public du modèle, la version utilisée et la vérification signalée. N'envoyez pas de fichiers de modèles privés. Pour le processus complet, voir [CONTRIBUTING.fr.md](CONTRIBUTING.fr.md) — également disponible en [English](CONTRIBUTING.md), [Português](CONTRIBUTING.pt-PT.md), [Español](CONTRIBUTING.es.md), [Italiano](CONTRIBUTING.it.md) et [中文](CONTRIBUTING.zh.md).
 
 ## Sécurité
 

@@ -70,7 +70,7 @@ Un'attestazione valida dimostra **chi ha compilato** il file e da quale codice �
 
 Se Windows SmartScreen dice che l'app non è riconosciuta, clicca **Ulteriori informazioni → Esegui comunque**. Quell'avviso appare perché l'eseguibile non è firmato digitalmente; un certificato di firma costa denaro ogni anno e questo progetto è gratuito. Verifica sempre l'hash e confrontalo con quello pubblicato nella pagina della release.
 
-Altre piattaforme: il codice sorgente funziona ovunque siano disponibili Python e Tk (macOS incluso). Vedi [CONTRIBUTING.md](CONTRIBUTING.md) per eseguirlo dai sorgenti.
+Altre piattaforme: il codice sorgente funziona ovunque siano disponibili Python e Tk (macOS incluso). Vedi [CONTRIBUTING.it.md](CONTRIBUTING.it.md) per eseguirlo dai sorgenti.
 
 ## Come si usa
 
@@ -137,7 +137,7 @@ Qui è pubblicato solo il necessario per usare, compilare e migliorare lo strume
 | `build_exe.bat`, `build_linux.sh` | Compilazioni riproducibili per Windows e Linux |
 | `tests/test_smoke.py` | Test automatici con campioni innocui generati al momento |
 | `screenshots/` | Immagini usate nella documentazione |
-| `README*.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE` | Documentazione e licenza |
+| `README*.md`, `CONTRIBUTING*.md`, `SECURITY.md`, `LICENSE` | Documentazione e licenza |
 | `.github/workflows/` | Test automatici e build della release per entrambe le piattaforme |
 
 **Non** sono nel repository, di proposito:
@@ -168,7 +168,7 @@ Sei nuovo? Inizia da una **`good first issue`**: attività piccole e ben descrit
 - Aggiungi test automatici con file di esempio innocui.
 - Rileggi una delle traduzioni del README se sei madrelingua.
 
-Per segnalare un falso positivo, apri una issue con il link pubblico del modello, la versione usata e il controllo segnalato. Non inviare file di modelli privati. Per il processo completo, vedi [CONTRIBUTING.md](CONTRIBUTING.md).
+Per segnalare un falso positivo, apri una issue con il link pubblico del modello, la versione usata e il controllo segnalato. Non inviare file di modelli privati. Per il processo completo, vedi [CONTRIBUTING.it.md](CONTRIBUTING.it.md) — è disponibile anche in [English](CONTRIBUTING.md), [Português](CONTRIBUTING.pt-PT.md), [Français](CONTRIBUTING.fr.md), [Español](CONTRIBUTING.es.md) e [中文](CONTRIBUTING.zh.md).
 
 ## Sicurezza
 
