@@ -12,6 +12,7 @@ Uso:
     python tests/test_smoke.py
 """
 
+import collections
 import json
 import pickle
 import struct
@@ -20,6 +21,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -283,6 +285,67 @@ class TestTranslatedChecks(Base):
         for c in self.checks():
             self.assertTrue(c["detalhe"])
             self.assertEqual(c["detalhe"], core.texto_check(c, "pt")[1])
+
+
+class TestOwnLayer(Base):
+    """A camada própria tem de detetar sozinha, mesmo que o picklescan diga
+    que está tudo limpo. Mockamos o picklescan para isolar a nossa análise."""
+
+    def verify_own(self, path):
+        with mock.patch.object(core, "run_picklescan",
+                               return_value=(0, "no suspicious global found")):
+            return self.verify(path, core.sha256_of(path))
+
+    def test_pydoc_locate_is_flagged(self):
+        p = write(self.tmp / "pydoc.pkl", b"cpydoc\nlocate\n(S'os'\ntR.")
+        checks, _digest, label, _code = self.verify_own(p)
+        self.assertIn(self.state_of(checks, "Imports perigosos"),
+                      (core.REPROVADO, core.AVISO))
+        self.assertNotEqual(label, "VERDE", checks)
+
+    def test_timeit_is_red(self):
+        p = write(self.tmp / "timeit.pkl", b"ctimeit\ntimeit\n(S'pass'\ntR.")
+        checks, _digest, label, code = self.verify_own(p)
+        self.assertEqual(self.state_of(checks, "Imports perigosos"), core.REPROVADO)
+        self.assertEqual(label, "VERMELHO", checks)
+        self.assertEqual(code, 2)
+
+    def test_pip_internal_is_red(self):
+        p = write(self.tmp / "pip.pkl", b"cpip._internal\nutils\n(S'x'\ntR.")
+        checks, _digest, label, _code = self.verify_own(p)
+        self.assertEqual(self.state_of(checks, "Imports perigosos"), core.REPROVADO)
+        self.assertEqual(label, "VERMELHO", checks)
+
+    def test_functools_alone_is_yellow_not_red(self):
+        p = write(self.tmp / "func.pkl", b"cfunctools\npartial\n(K\x01tR.")
+        checks, _digest, label, _code = self.verify_own(p)
+        self.assertEqual(self.state_of(checks, "Imports perigosos"), core.OK)
+        self.assertEqual(self.state_of(checks, "Imports de indireção"), core.AVISO)
+        self.assertEqual(label, "AMARELO", checks)
+
+    def test_indirection_alongside_dangerous_import_is_red(self):
+        p = write(self.tmp / "mau2.pkl",
+                  b"cfunctools\npartial\n(K\x01tRcos\nsystem\n(S'id'\ntR.")
+        checks, _digest, label, _code = self.verify_own(p)
+        self.assertEqual(self.state_of(checks, "Imports perigosos"), core.REPROVADO)
+        self.assertEqual(self.state_of(checks, "Imports de indireção"), core.REPROVADO)
+        self.assertEqual(label, "VERMELHO", checks)
+
+    def test_default_whitelist_excludes_dangerous_and_indirection(self):
+        raizes = {linha.split(".", 1)[0] for linha in core.DEFAULT_WHITELIST.splitlines()
+                  if linha.strip() and not linha.strip().startswith("#")}
+        self.assertFalse(raizes & core.DANGEROUS_MODULES,
+                         f"whitelist com módulos perigosos: {raizes & core.DANGEROUS_MODULES}")
+        self.assertFalse(raizes & core.SUSPICIOUS_INDIRECTION,
+                         f"whitelist com indireção: {raizes & core.SUSPICIOUS_INDIRECTION}")
+
+    def test_benign_ordered_dict_with_hash_is_green(self):
+        p = write(self.tmp / "ordenado.pkl",
+                  pickle.dumps(collections.OrderedDict({"pesos": [1, 2, 3]}), protocol=4))
+        checks, _digest, label, _code = self.verify_own(p)
+        self.assertEqual(label, "VERDE", checks)
+        self.assertEqual(self.state_of(checks, "Imports de indireção"), core.OK)
+        self.assertEqual(self.state_of(checks, "Imports fora da whitelist"), core.OK)
 
 
 class TestSafetensors(Base):

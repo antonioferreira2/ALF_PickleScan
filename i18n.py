@@ -337,6 +337,10 @@ CHECK_STRINGS = {
         "reco_3": "In PyTorch, load with weights_only=True instead of letting the pickle run (from version 2.6 this is the default).",
         "reco_4": "Download the file again from the author's official page and compare the SHA-256 with the published one.",
         "reco_5": "If you recognise the payload and the model is legitimate, tell the model's author: the file at the source may have been replaced.",
+        "chk_indirection": "Indirection imports",
+        "d_indirection_note": "These modules run nothing by themselves. They hide the real call from simple filters.",
+        "d_indirection_reason": "reason: {reason}",
+        "reason_indirection": "call hidden through another function (used to bypass filters)",
     },
     "pt": {
         "chk_file": "Ficheiro",
@@ -434,6 +438,10 @@ CHECK_STRINGS = {
         "reco_3": "Em PyTorch, carrega com weights_only=True em vez de deixar o pickle executar (a partir da versão 2.6 é o comportamento por omissão).",
         "reco_4": "Volta a descarregar o ficheiro da página oficial do autor e compara o SHA-256 com o que está publicado.",
         "reco_5": "Se reconheces o payload e o modelo é legítimo, avisa o autor do modelo: o ficheiro na origem pode ter sido substituído.",
+        "chk_indirection": "Imports de indireção",
+        "d_indirection_note": "Estes módulos não executam nada por si. Escondem a chamada verdadeira de filtros simples.",
+        "d_indirection_reason": "razão: {reason}",
+        "reason_indirection": "chamada escondida através de outra função (usado para contornar filtros)",
     },
     "fr": {
         "chk_file": "Fichier",
@@ -531,6 +539,10 @@ CHECK_STRINGS = {
         "reco_3": "Sous PyTorch, chargez avec weights_only=True au lieu de laisser le pickle s'exécuter (c'est le comportement par défaut depuis la version 2.6).",
         "reco_4": "Téléchargez à nouveau le fichier depuis la page officielle de l'auteur et comparez le SHA-256 avec celui publié.",
         "reco_5": "Si vous reconnaissez la charge utile et que le modèle est légitime, prévenez l'auteur : le fichier à la source a peut-être été remplacé.",
+        "chk_indirection": "Imports d'indirection",
+        "d_indirection_note": "Ces modules n'exécutent rien par eux-mêmes. Ils cachent l'appel réel aux filtres simples.",
+        "d_indirection_reason": "raison : {reason}",
+        "reason_indirection": "appel masqué via une autre fonction (utilisé pour contourner les filtres)",
     },
     "es": {
         "chk_file": "Archivo",
@@ -628,6 +640,10 @@ CHECK_STRINGS = {
         "reco_3": "En PyTorch, carga con weights_only=True en lugar de dejar que el pickle se ejecute (desde la versión 2.6 es el comportamiento por defecto).",
         "reco_4": "Vuelve a descargar el archivo desde la página oficial del autor y compara el SHA-256 con el publicado.",
         "reco_5": "Si reconoces la carga útil y el modelo es legítimo, avisa al autor del modelo: el archivo en origen puede haber sido sustituido.",
+        "chk_indirection": "Importaciones de indirección",
+        "d_indirection_note": "Estos módulos no ejecutan nada por sí mismos. Ocultan la llamada real a los filtros simples.",
+        "d_indirection_reason": "razón: {reason}",
+        "reason_indirection": "llamada oculta mediante otra función (se usa para saltar filtros)",
     },
     "it": {
         "chk_file": "File",
@@ -725,6 +741,10 @@ CHECK_STRINGS = {
         "reco_3": "In PyTorch, carica con weights_only=True invece di lasciare che il pickle venga eseguito (dalla versione 2.6 è il comportamento predefinito).",
         "reco_4": "Scarica di nuovo il file dalla pagina ufficiale dell'autore e confronta lo SHA-256 con quello pubblicato.",
         "reco_5": "Se riconosci il payload e il modello è legittimo, avvisa l'autore del modello: il file all'origine potrebbe essere stato sostituito.",
+        "chk_indirection": "Import di indirezione",
+        "d_indirection_note": "Questi moduli non eseguono nulla da soli. Nascondono la chiamata reale ai filtri semplici.",
+        "d_indirection_reason": "motivo: {reason}",
+        "reason_indirection": "chiamata nascosta tramite un'altra funzione (aggira i filtri)",
     },
     "zh": {
         "chk_file": "文件",
@@ -822,6 +842,10 @@ CHECK_STRINGS = {
         "reco_3": "在 PyTorch 中使用 weights_only=True 加载，不要让 pickle 执行（2.6 版起为默认行为）。",
         "reco_4": "从作者官方页面重新下载文件，并与公布的 SHA-256 比较。",
         "reco_5": "如果你能辨认出该载荷而模型是正常的，请通知模型作者：源头的文件可能已被替换。",
+        "chk_indirection": "间接调用导入项",
+        "d_indirection_note": "这些模块本身不执行任何内容，会向简单过滤器隐藏真正的调用。",
+        "d_indirection_reason": "原因：{reason}",
+        "reason_indirection": "通过其他函数隐藏调用（用于绕过过滤）",
     },
 }
 

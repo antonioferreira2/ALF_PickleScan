@@ -63,7 +63,17 @@ DANGEROUS_MODULES = {
     "_codecs", "codecs", "marshal", "base64", "binascii", "tempfile",
     "urllib", "http", "ftplib", "smtplib", "requests", "signal",
     "resource", "fcntl", "tty", "termios",
+    # Módulos da biblioteca padrão que, por si só, conseguem localizar e
+    # executar código (por isso são vermelhos).
+    "pydoc", "timeit", "pip", "pkgutil", "pdb", "site", "zipimport",
+    "sysconfig", "ntpath", "shlex", "cProfile", "profile", "distutils",
+    "idlelib",
 }
+
+# Módulos que não executam nada sozinhos mas servem para esconder a chamada
+# verdadeira (indireção). Isolados dão AMARELO; junto com um import perigoso
+# acompanham o vermelho. Nenhum destes pode estar na DEFAULT_WHITELIST.
+SUSPICIOUS_INDIRECTION = {"functools", "operator", "copyreg", "types", "weakref"}
 DANGEROUS_BUILTINS = {"eval", "exec", "compile", "__import__", "getattr", "open", "input", "breakpoint"}
 
 # Funções conhecidas por serem usadas em payloads maliciosos em pickle.
@@ -317,6 +327,12 @@ def analyse_pickle(path: Path) -> list:
     return results
 
 
+def indirection_imports(globals_found) -> list:
+    """Imports de indireção encontrados, ordenados e sem repetições."""
+    return sorted({f"{mod}.{attr}" for mod, attr in globals_found
+                   if mod.split(".")[0] in SUSPICIOUS_INDIRECTION})
+
+
 def check_globals(globals_found, whitelist):
     """Devolve ({nome: chave_da_razão}, [imports fora da whitelist])."""
     danger, unknown = {}, set()
@@ -477,6 +493,27 @@ def pickle_checks(path: Path, whitelist: set) -> list:
             (lambda itens: lambda lang: "\n".join(f"{n} - {t(r, lang)}" for n, r in itens))(itens)))
     else:
         checks.append(_check("Imports perigosos", OK, "chk_danger",
+                             lambda lang: t("d_none", lang)))
+
+    # 3b. Indireção: functools, operator, copyreg... Não executam nada por si,
+    # mas são o truque habitual para esconder a chamada perigosa de um filtro.
+    indirect = indirection_imports(all_globals)
+    if indirect:
+        lista = tuple(indirect[:20])
+        extra = len(indirect) - len(lista)
+
+        def _indirect(lang, lista=lista, extra=extra, estado=None):
+            txt = "\n".join(lista)
+            if extra:
+                txt += "\n" + t("d_unknown_more", lang, count=extra)
+            return (txt + "\n" + t("d_indirection_note", lang) + "\n"
+                    + t("d_indirection_reason", lang,
+                        reason=t("reason_indirection", lang)))
+
+        checks.append(_check("Imports de indireção", REPROVADO if danger else AVISO,
+                             "chk_indirection", _indirect))
+    else:
+        checks.append(_check("Imports de indireção", OK, "chk_indirection",
                              lambda lang: t("d_none", lang)))
 
     # 4. Evidência: o que cada chamada suspeita receberia (o payload em si)
