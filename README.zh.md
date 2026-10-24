@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="ALF_picklescan" width="150"></p>
+
 # ALF_picklescan
 
 **免费、开源的 AI 模型文件检查工具。** 在加载下载的模型之前，先检查它的完整性、结构，以及是否隐藏了危险代码。支持 **GGUF**、**safetensors** 和 **pickle/PyTorch** 文件（`.bin`、`.pt`、`.pth`、`.pkl`）。支持 Windows 和 Linux。无需安装，也不需要编程知识。
@@ -129,6 +131,7 @@ python ALF_picklescan.py model.gguf --sha256 <hash>
 | `ALF_picklescan_gui.py` | 图形界面（Tk） |
 | `i18n.py` | 界面翻译（EN、PT、FR、ES、IT、ZH） |
 | `requirements.txt` | 固定版本的 picklescan，唯一的外部依赖 |
+| `assets/logo.png` | 项目标志，用于各语言 README 顶部 |
 | `build_exe.bat`、`build_linux.sh` | Windows 和 Linux 的可复现构建 |
 | `tests/test_smoke.py` | 使用临时生成的无害样本的自动化测试 |
 | `screenshots/` | 文档中使用的图片 |
