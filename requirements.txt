@@ -1,0 +1,7 @@
+# Dependência externa do ALF_picklescan.
+#
+# A versão é fixa de propósito: o comportamento do picklescan muda entre
+# versões e o resultado de uma verificação tem de ser reproduzível. O
+# Dependabot abre um pull request quando houver versão nova; a atualização
+# só entra depois de os testes passarem e de alguém confirmar o comportamento.
+picklescan==1.0.5

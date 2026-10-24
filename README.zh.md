@@ -23,7 +23,7 @@
 ## 它做什么
 
 - 计算文件的 **SHA-256**，并与模型作者公布的哈希值比较。
-- 验证 GGUF、safetensors 和 PyTorch ZIP 文件的**结构**。
+- 验证 GGUF、safetensors 和 PyTorch ZIP 文件的**结构**，包括 GGUF 元数据及其由推理引擎渲染的**聊天模板**，以及每个 safetensors 张量是否真的符合形状与 dtype 所需的大小。
 - **在不执行的情况下**读取 pickle 文件的**导入项**（与 [picklescan](https://github.com/mmaitre314/picklescan) 使用相同的技术），并标记已知的危险函数，例如 `os.system`、`subprocess`、`eval` 或 `exec`。
 - 显示**可疑调用将要执行的内容**：pickle 中携带的命令、URL 或编码数据块，作为证据列出，并标记 shell、下载、窃取凭据、持久化和混淆等模式。整个过程不会执行任何代码。
 - 标记模型包中隐藏的**可执行文件**。
@@ -54,6 +54,17 @@ sha256sum -c ALF_picklescan-linux-x86_64.sha256
 chmod +x ALF_picklescan-linux-x86_64
 ./ALF_picklescan-linux-x86_64
 ```
+
+### 验证可执行文件的来源
+
+每个新版本还附带 GitHub 的**构建证明**（*Artifact Attestations*），它将文件与构建它的工作流以及确切的提交关联起来。安装 [GitHub CLI](https://cli.github.com/) 后：
+
+```
+gh attestation verify ALF_picklescan-windows-x64.exe --repo antonioferreira2/ALF_PickleScan
+gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_PickleScan
+```
+
+有效的证明只能说明**是谁构建**了这个文件、用的是哪份代码，不能证明代码是安全的。v2.1.0 版本早于此功能，只有 `.sha256` 文件。
 
 如果 Windows SmartScreen 提示无法识别此应用，请点击 **更多信息 → 仍要运行**。出现该提示是因为可执行文件没有代码签名证书；签名证书每年都需要付费，而这个项目是免费的。请始终先核对哈希值，并与发布页面上公布的一致。
 
@@ -115,6 +126,7 @@ python ALF_picklescan.py model.gguf --sha256 <hash>
 | `ALF_picklescan.py` | 校验引擎和命令行界面 |
 | `ALF_picklescan_gui.py` | 图形界面（Tk） |
 | `i18n.py` | 界面翻译（EN、PT、FR、ES、IT、ZH） |
+| `requirements.txt` | 固定版本的 picklescan，唯一的外部依赖 |
 | `build_exe.bat`、`build_linux.sh` | Windows 和 Linux 的可复现构建 |
 | `tests/test_smoke.py` | 使用临时生成的无害样本的自动化测试 |
 | `screenshots/` | 文档中使用的图片 |

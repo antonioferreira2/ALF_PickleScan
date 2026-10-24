@@ -23,7 +23,7 @@ The author is not selling anything, not collecting data and not asking for donat
 ## What it does
 
 - Computes the **SHA-256** of the file and compares it with the hash published by the model author.
-- Validates the **structure** of GGUF, safetensors and PyTorch zip files.
+- Validates the **structure** of GGUF, safetensors and PyTorch zip files — including the GGUF metadata and its **chat template**, which the inference engine renders, and whether each safetensors tensor really has the size its shape and dtype require.
 - Reads the **imports** of pickle files **without executing them** (based on the same technique as [picklescan](https://github.com/mmaitre314/picklescan)) and flags known dangerous functions such as `os.system`, `subprocess`, `eval` or `exec`.
 - Shows **what the suspicious call would run**: the command, URL or encoded block carried inside the pickle, printed as evidence, together with shell, download, credential-theft, persistence and obfuscation patterns. Nothing is executed.
 - Flags **executable files** hidden inside a model package.
@@ -54,6 +54,17 @@ sha256sum -c ALF_picklescan-linux-x86_64.sha256
 chmod +x ALF_picklescan-linux-x86_64
 ./ALF_picklescan-linux-x86_64
 ```
+
+### Verify where the executable came from
+
+Every new release also carries a GitHub **build attestation** (*Artifact Attestations*), which ties the file to the workflow that built it and to the exact commit. With the [GitHub CLI](https://cli.github.com/) installed:
+
+```
+gh attestation verify ALF_picklescan-windows-x64.exe --repo antonioferreira2/ALF_PickleScan
+gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_PickleScan
+```
+
+A valid attestation proves **who built** the file and from which code — it does not prove the code is safe. The v2.1.0 release predates this and only has the `.sha256`.
 
 If Windows SmartScreen says the app is not recognised, click **More info → Run anyway**. That warning appears because the executable is not code-signed; a code-signing certificate costs money every year, and this project is free. Always check the hash first, and compare it with the one published on the release page.
 
@@ -115,6 +126,7 @@ Only what is needed to use, build and improve the tool is published here:
 | `ALF_picklescan.py` | Verification engine and command-line interface |
 | `ALF_picklescan_gui.py` | Desktop interface (Tk) |
 | `i18n.py` | Translations of the interface (EN, PT, FR, ES, IT, ZH) |
+| `requirements.txt` | Pinned version of picklescan, the only external dependency |
 | `build_exe.bat`, `build_linux.sh` | Reproducible builds for Windows and Linux |
 | `tests/test_smoke.py` | Automated tests with harmless generated samples |
 | `screenshots/` | Images used in the documentation |

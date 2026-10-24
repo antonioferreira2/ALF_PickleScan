@@ -23,7 +23,7 @@ L'auteur ne vend rien, ne collecte aucune donnée et ne demande pas de dons. L'o
 ## Ce qu'il fait
 
 - Calcule le **SHA-256** du fichier et le compare à l'empreinte publiée par l'auteur du modèle.
-- Valide la **structure** des fichiers GGUF, safetensors et ZIP PyTorch.
+- Valide la **structure** des fichiers GGUF, safetensors et ZIP PyTorch — y compris les métadonnées GGUF et leur **modèle de conversation**, que le moteur d'inférence rend, et si chaque tenseur safetensors a bien la taille exigée par sa forme et son dtype.
 - Lit les **imports** des fichiers pickle **sans les exécuter** (même technique que [picklescan](https://github.com/mmaitre314/picklescan)) et signale les fonctions dangereuses connues, comme `os.system`, `subprocess`, `eval` ou `exec`.
 - Montre **ce que l'appel suspect exécuterait** : la commande, l'URL ou le bloc encodé transporté dans le pickle, affiché comme preuve, ainsi que les motifs de shell, téléchargement, vol d'identifiants, persistance et obfuscation. Rien n'est exécuté.
 - Signale les **fichiers exécutables** cachés dans un paquet de modèle.
@@ -54,6 +54,17 @@ sha256sum -c ALF_picklescan-linux-x86_64.sha256
 chmod +x ALF_picklescan-linux-x86_64
 ./ALF_picklescan-linux-x86_64
 ```
+
+### Vérifier l'origine de l'exécutable
+
+Chaque nouvelle version inclut aussi une **attestation de build** GitHub (*Artifact Attestations*), qui relie le fichier au workflow qui l'a compilé et au commit exact. Avec le [GitHub CLI](https://cli.github.com/) installé :
+
+```
+gh attestation verify ALF_picklescan-windows-x64.exe --repo antonioferreira2/ALF_PickleScan
+gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_PickleScan
+```
+
+Une attestation valide prouve **qui a compilé** le fichier et à partir de quel code — pas que le code est sûr. La version v2.1.0 est antérieure et ne contient que le `.sha256`.
 
 Si Windows SmartScreen indique que l'application n'est pas reconnue, cliquez sur **Informations complémentaires → Exécuter quand même**. Cet avertissement apparaît parce que l'exécutable n'est pas signé numériquement ; un certificat de signature coûte de l'argent chaque année et ce projet est gratuit. Vérifiez toujours l'empreinte et comparez-la à celle publiée sur la page de la version.
 
@@ -115,6 +126,7 @@ Seul le nécessaire pour utiliser, compiler et améliorer l'outil est publié ic
 | `ALF_picklescan.py` | Moteur de vérification et interface en ligne de commande |
 | `ALF_picklescan_gui.py` | Interface graphique (Tk) |
 | `i18n.py` | Traductions de l'interface (EN, PT, FR, ES, IT, ZH) |
+| `requirements.txt` | Version figée de picklescan, la seule dépendance externe |
 | `build_exe.bat`, `build_linux.sh` | Compilations reproductibles pour Windows et Linux |
 | `tests/test_smoke.py` | Tests automatisés avec des échantillons inoffensifs générés à la volée |
 | `screenshots/` | Images utilisées dans la documentation |

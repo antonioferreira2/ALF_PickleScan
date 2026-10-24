@@ -18,7 +18,7 @@ if errorlevel 1 (
 
 echo [1/3] A instalar dependencias...
 python -m pip install --upgrade pip
-python -m pip install picklescan==1.0.5 pyinstaller
+python -m pip install -r requirements.txt pyinstaller
 if errorlevel 1 (
     echo Falha na instalacao das dependencias.
     pause

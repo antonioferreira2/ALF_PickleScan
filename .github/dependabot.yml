@@ -1,0 +1,15 @@
+version: 2
+
+# O Dependabot só abre pull requests: nada é atualizado sozinho.
+# A versão fixa do picklescan muda apenas depois de os testes correrem e de
+# alguém confirmar que o comportamento da verificação se mantém.
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

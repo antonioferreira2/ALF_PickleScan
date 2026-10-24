@@ -27,7 +27,7 @@ source .venv/bin/activate
 
 echo "[2/4] Dependências..."
 python -m pip install --upgrade pip --quiet
-python -m pip install picklescan==1.0.5 pyinstaller --quiet
+python -m pip install -r requirements.txt pyinstaller --quiet
 
 echo "[3/4] A gerar o executável..."
 python -m PyInstaller --onefile --name ALF_picklescan --clean --collect-all picklescan ALF_picklescan_gui.py

@@ -23,7 +23,7 @@ L'autore non vende nulla, non raccoglie dati e non chiede donazioni. L'obiettivo
 ## Cosa fa
 
 - Calcola lo **SHA-256** del file e lo confronta con l'hash pubblicato dall'autore del modello.
-- Valida la **struttura** dei file GGUF, safetensors e ZIP di PyTorch.
+- Valida la **struttura** dei file GGUF, safetensors e ZIP di PyTorch — compresi i metadati GGUF e il loro **template di chat**, che il motore di inferenza renderizza, e se ogni tensore safetensors ha davvero la dimensione richiesta da forma e dtype.
 - Legge gli **import** dei file pickle **senza eseguirli** (con la stessa tecnica di [picklescan](https://github.com/mmaitre314/picklescan)) e segnala funzioni pericolose note, come `os.system`, `subprocess`, `eval` o `exec`.
 - Mostra **cosa eseguirebbe la chiamata sospetta**: il comando, l'URL o il blocco codificato contenuto nel pickle, presentato come prova, insieme a pattern di shell, download, furto di credenziali, persistenza e offuscamento. Nulla viene eseguito.
 - Segnala **file eseguibili** nascosti dentro un pacchetto di modello.
@@ -54,6 +54,17 @@ sha256sum -c ALF_picklescan-linux-x86_64.sha256
 chmod +x ALF_picklescan-linux-x86_64
 ./ALF_picklescan-linux-x86_64
 ```
+
+### Verificare l'origine dell'eseguibile
+
+Ogni nuova release include anche un'**attestazione di build** di GitHub (*Artifact Attestations*), che collega il file al workflow che lo ha compilato e al commit esatto. Con il [GitHub CLI](https://cli.github.com/) installato:
+
+```
+gh attestation verify ALF_picklescan-windows-x64.exe --repo antonioferreira2/ALF_PickleScan
+gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_PickleScan
+```
+
+Un'attestazione valida dimostra **chi ha compilato** il file e da quale codice — non che il codice sia sicuro. La release v2.1.0 è precedente e ha solo il `.sha256`.
 
 Se Windows SmartScreen dice che l'app non è riconosciuta, clicca **Ulteriori informazioni → Esegui comunque**. Quell'avviso appare perché l'eseguibile non è firmato digitalmente; un certificato di firma costa denaro ogni anno e questo progetto è gratuito. Verifica sempre l'hash e confrontalo con quello pubblicato nella pagina della release.
 
@@ -115,6 +126,7 @@ Qui è pubblicato solo il necessario per usare, compilare e migliorare lo strume
 | `ALF_picklescan.py` | Motore di verifica e interfaccia a riga di comando |
 | `ALF_picklescan_gui.py` | Interfaccia grafica (Tk) |
 | `i18n.py` | Traduzioni dell'interfaccia (EN, PT, FR, ES, IT, ZH) |
+| `requirements.txt` | Versione fissata di picklescan, l'unica dipendenza esterna |
 | `build_exe.bat`, `build_linux.sh` | Compilazioni riproducibili per Windows e Linux |
 | `tests/test_smoke.py` | Test automatici con campioni innocui generati al momento |
 | `screenshots/` | Immagini usate nella documentazione |

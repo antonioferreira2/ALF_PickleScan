@@ -32,7 +32,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y python3-tk
 
       - name: Instalar dependências
-        run: python -m pip install --upgrade pip picklescan==1.0.5
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
 
       - name: Compilar os módulos
         run: python -m py_compile ALF_picklescan.py ALF_picklescan_gui.py i18n.py

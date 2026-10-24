@@ -9,6 +9,10 @@ on:
 
 permissions:
   contents: write
+  # Necessárias para atestar a origem dos executáveis (GitHub Artifact
+  # Attestations): o comprovativo assinado liga o ficheiro ao workflow e ao commit.
+  id-token: write
+  attestations: write
 
 jobs:
   build-windows:
@@ -25,7 +29,7 @@ jobs:
       - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
-          python -m pip install picklescan==1.0.5 pyinstaller
+          python -m pip install -r requirements.txt pyinstaller
 
       - name: Gerar o executável Windows
         run: python -m PyInstaller --onefile --windowed --name ALF_picklescan --clean --collect-all picklescan ALF_picklescan_gui.py
@@ -36,6 +40,11 @@ jobs:
           Move-Item dist\ALF_picklescan.exe dist\ALF_picklescan-windows-x64.exe
           $hash = (Get-FileHash dist\ALF_picklescan-windows-x64.exe -Algorithm SHA256).Hash.ToLower()
           "$hash  ALF_picklescan-windows-x64.exe" | Out-File -Encoding ascii dist\ALF_picklescan-windows-x64.exe.sha256
+
+      - name: Atestar a origem do executável
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: dist/ALF_picklescan-windows-x64.exe
 
       - name: Guardar como artefacto
         uses: actions/upload-artifact@v4
@@ -66,7 +75,7 @@ jobs:
       - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
-          python -m pip install picklescan==1.0.5 pyinstaller
+          python -m pip install -r requirements.txt pyinstaller
 
       - name: Gerar o executável Linux
         run: python -m PyInstaller --onefile --name ALF_picklescan --clean --collect-all picklescan ALF_picklescan_gui.py
@@ -76,6 +85,11 @@ jobs:
           cd dist
           mv ALF_picklescan ALF_picklescan-linux-x86_64
           sha256sum ALF_picklescan-linux-x86_64 > ALF_picklescan-linux-x86_64.sha256
+
+      - name: Atestar a origem do executável
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: dist/ALF_picklescan-linux-x86_64
 
       # Abre a interface num ecrã virtual. Se o executável arrancar e continuar a
       # correr, o timeout mata-o e devolve 124. Qualquer outro código é falha.
