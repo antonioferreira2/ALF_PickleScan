@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ALF_picklescan v2.3
+ALF_picklescan v2.4
 Verificação de modelos de IA antes de os usar.
 
 Formatos suportados:
@@ -39,7 +39,7 @@ from pathlib import Path
 
 from i18n import DEFAULT_LANG, STRINGS, t
 
-VERSION = "2.3"
+VERSION = "2.4"
 if getattr(sys, "frozen", False):
     # Executável empacotado: usar a pasta onde está o .exe (não a pasta temporária do PyInstaller)
     BASE_DIR = Path(sys.executable).resolve().parent
@@ -1019,6 +1019,26 @@ def mostrar(checks, label, acao, report, lang: str = "pt"):
     print(t("limitations", lang))
 
 
+def json_report(path: Path, digest: str, label: str, acao: str, checks: list,
+                code: int, lang: str = "pt") -> str:
+    """Resultado completo em JSON, com os textos no idioma pedido.
+
+    Pensado para scripts e CI: uma linha de JSON válido em vez do relatório
+    de consola. O código de saída do processo continua a ser 0/1/2/3.
+    """
+    itens = []
+    for c in checks:
+        nome, detalhe = texto_check(c, lang)
+        itens.append({"name": nome,
+                      "state": t(STATE_KEY[c["estado"]], lang),
+                      "detail": detalhe})
+    return json.dumps({"file": path.name, "sha256": digest,
+                       "verdict": t("verdict_" + label, lang),
+                       "action": t("action_" + label, lang),
+                       "exit_code": code, "language": lang,
+                       "checks": itens}, ensure_ascii=False, indent=2)
+
+
 def pedir_entrada(lang: str = "pt"):
     print(f"ALF_picklescan v{VERSION}")
     print("-" * 40)
@@ -1038,6 +1058,8 @@ def main() -> int:
     ap.add_argument("--sha256", default=None, help="SHA-256 publicado pelo autor do modelo")
     ap.add_argument("--lang", default="pt", choices=[code for code, _ in STRINGS.items()] or ["pt"],
                     help="Idioma do relatório (en, pt, fr, es, it, zh)")
+    ap.add_argument("--json", action="store_true",
+                    help="Imprimir o resultado em JSON (para scripts e CI)")
     args = ap.parse_args()
 
     interativo = args.ficheiro is None
@@ -1051,7 +1073,8 @@ def main() -> int:
         print(t("cli_notfound", args.lang, path=path))
         return 3
 
-    print("\n" + t("cli_analysing", args.lang))
+    if not args.json:
+        print("\n" + t("cli_analysing", args.lang))
     try:
         whitelist = load_whitelist()
         checks, digest = verificar(path, sha, whitelist)
@@ -1060,6 +1083,10 @@ def main() -> int:
         return 3
 
     label, acao, code = veredicto(checks)
+    if args.json:
+        # Só JSON no stdout, para poder ser lido por outro programa.
+        print(json_report(path, digest, label, acao, checks, code, args.lang))
+        return code
     report = gerar_relatorio(path, digest, label, acao, checks, args.lang)
     mostrar(checks, label, acao, report, args.lang)
 

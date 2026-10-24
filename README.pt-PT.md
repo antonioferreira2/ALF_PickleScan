@@ -88,6 +88,8 @@ python ALF_picklescan.py modelo.gguf --sha256 <hash>
 
 Os códigos de saída permitem usá-lo em scripts e pipelines de CI: `0` verde, `1` amarelo, `2` vermelho, `3` erro.
 
+Com `--json`, o mesmo resultado é impresso como um documento JSON (verificações, veredicto e código de saída) e não é escrito relatório HTML — prático para pipelines e scripts.
+
 ## Resultados
 
 | Cor | Significado | O que fazer |
@@ -149,7 +151,8 @@ Plano público. Os itens podem mudar; o progresso está nas [Issues](https://git
 1. **v2.1: interface multilingue e build Linux.** ✅ Inglês, português, francês, espanhol, italiano e chinês na aplicação; builds de Windows e Linux; picklescan incluído nos executáveis.
 2. **v2.2: evidência do payload.** ✅ Quando uma função perigosa é referida, o relatório mostra os argumentos que ela receberia — o comando, o URL, o bloco codificado — e assinala padrões de shell, download, roubo de credenciais, persistência e ofuscação.
 3. **v2.3: mensagens de verificação traduzidas.** ✅ Nomes, detalhes e relatório seguem o idioma escolhido, nos seis idiomas.
-4. **v3.0: mais formatos e automação.** Suporte para ONNX, exportação dos relatórios em JSON e modo de saída para pipelines de CI.
+4. **v2.4: mais deteções e automação.** ✅ Deteção própria de `pydoc`, `timeit` e `pip`, mais imports de indireção; template de chat dos GGUF; tamanhos dos tensores em safetensors; atestações de build assinadas; saída `--json` para CI.
+5. **v3.0: mais formatos.** Suporte para ONNX e outros formatos de modelo.
 
 ## Como contribuir
 

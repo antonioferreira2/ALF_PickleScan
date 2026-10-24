@@ -16,12 +16,15 @@ import collections
 import json
 import pickle
 import struct
+import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 from unittest import mock
+
+ROOT = Path(__file__).resolve().parent.parent
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -539,6 +542,34 @@ class TestMisc(Base):
     def test_fmt_size(self):
         self.assertEqual(core.fmt_size(512), "512 B")
         self.assertEqual(core.fmt_size(2048), "2.00 KB")
+
+
+class TestJson(Base):
+    def test_json_report_is_valid_json_in_the_chosen_language(self):
+        p = write(self.tmp / "modelo.pkl", benign_pickle())
+        with mock.patch.object(core, "run_picklescan",
+                               return_value=(0, "no suspicious global found")):
+            checks, digest = core.verificar(p, core.sha256_of(p), self.whitelist)
+        label, acao, code = core.veredicto(checks)
+        dados = json.loads(core.json_report(p, digest, label, acao, checks, code, "fr"))
+        self.assertEqual(dados["exit_code"], code)
+        self.assertEqual(dados["verdict"], "VERT")
+        self.assertEqual(dados["action"], "Approuvé avec limitations")
+        self.assertTrue(dados["checks"])
+        self.assertEqual({"name", "state", "detail"}, set(dados["checks"][0]))
+
+    def test_cli_json_output_is_parseable(self):
+        p = write(self.tmp / "modelo.pkl", benign_pickle())
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "ALF_picklescan.py"), str(p),
+             "--sha256", core.sha256_of(p), "--json", "--lang", "en"],
+            capture_output=True, text=True, encoding="utf-8",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        dados = json.loads(r.stdout)
+        self.assertEqual(dados["language"], "en")
+        self.assertEqual(dados["verdict"], "GREEN")
+        self.assertEqual(dados["sha256"], core.sha256_of(p))
 
 
 class TestI18n(unittest.TestCase):
