@@ -113,7 +113,7 @@ Um ficheiro pode ter o hash confirmado e continuar a ser hostil. Aqui o hash con
 - **Sem análise de comportamento.** A ferramenta verifica o ficheiro, não o que o modelo faz quando corre.
 - **A análise de pickle usa uma lista de funções perigosas conhecidas.** Um payload novo, fora da lista, pode passar. Chamadas sem imports identificáveis ficam em amarelo por esse motivo.
 - **Confiar no hash.** O hash prova que o ficheiro corresponde ao que foi publicado, não que quem publicou é de confiança.
-- **GGUF e safetensors só são validados estruturalmente.** Isso confirma que o ficheiro está bem formado, não que os pesos sejam bons ou honestos.
+- **GGUF e safetensors são validados estruturalmente, incluindo o chat template dos GGUF e os tamanhos dos tensores; os pesos em si não são avaliados.** Um ficheiro pode estar perfeitamente bem formado e ser, ainda assim, um modelo desonesto.
 - **Backdoors nos pesos não são detetados.** Os scanners verificam se o ficheiro executa código ao ser carregado. Um modelo envenenado não precisa de executar código: pode comportar-se mal apenas quando é ativado por um gatilho, e pode instruir um agente local a ler ficheiros ou a enviar dados para algum lado. A ferramenta não consegue ver isto.
 - **Servidores locais e agentes fazem parte do risco.** Mantém os servidores de inferência locais (por exemplo, Ollama) ligados a `127.0.0.1`, não os expões à rede sem autenticação, e mantém credenciais e ficheiros `.env` fora do alcance de qualquer agente que corra um modelo.
 

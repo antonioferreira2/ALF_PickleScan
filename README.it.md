@@ -113,7 +113,7 @@ Un file può superare il controllo dell'hash e restare ostile. Qui l'hash è con
 - **Nessuna analisi del comportamento.** Lo strumento controlla il file, non ciò che fa il modello quando viene eseguito.
 - **L'analisi dei pickle usa un elenco di funzioni pericolose note.** Un payload nuovo, fuori dall'elenco, può passare. Le chiamate senza import identificabili sono segnate in giallo per questo motivo.
 - **Fidarsi dell'hash.** L'hash dimostra che il file corrisponde a ciò che è stato pubblicato, non che chi lo ha pubblicato sia affidabile.
-- **GGUF e safetensors sono validati solo strutturalmente.** Questo conferma che il file è ben formato, non che i pesi siano buoni o onesti.
+- **GGUF e safetensors vengono validati strutturalmente, incluso il chat template dei GGUF e le dimensioni dei tensori; i pesi in sé non vengono valutati.** Un file può essere perfettamente ben formato e restare un modello disonesto.
 - **Le backdoor nei pesi non vengono rilevate.** Gli scanner controllano se un file esegue codice al caricamento. Un modello avvelenato non ha bisogno di eseguire codice: può comportarsi male solo quando viene attivato, e può chiedere a un agente locale di leggere file o di inviare dati da qualche parte. Lo strumento non può vederlo.
 - **I server locali e gli agenti fanno parte del rischio.** Mantieni i server di inferenza locali (per esempio Ollama) legati a `127.0.0.1`, non esporli alla rete senza autenticazione, e tieni credenziali e file `.env` fuori dalla portata di qualsiasi agente che esegue un modello.
 

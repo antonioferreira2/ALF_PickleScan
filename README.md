@@ -113,7 +113,7 @@ A file can pass the hash check and still be hostile. Here the hash is confirmed 
 - **No behaviour analysis.** The tool checks the file, not what the model does when it runs.
 - **Pickle analysis uses a list of known dangerous functions.** A new payload that is not on the list may pass. Calls with no identifiable imports are flagged yellow for this reason.
 - **Trusting the hash.** The hash proves the file matches what was published, not that the publisher is trustworthy.
-- **GGUF and safetensors are only structurally validated.** That confirms the file is well-formed, not that the weights are good or honest.
+- **GGUF and safetensors are validated structurally, including the GGUF chat template and the tensor sizes; the weights themselves are not judged.** A file can be perfectly well-formed and still be a dishonest model.
 - **Backdoors in the weights are not detected.** Scanners check whether a file runs code when it loads. A poisoned model does not need to run code: it can behave maliciously only when triggered, and it can instruct a local agent to read files or send data somewhere. The tool cannot see this.
 - **Local servers and agents are part of the risk.** Keep local inference servers (for example Ollama) bound to `127.0.0.1`, do not expose them to the network without authentication, and keep credentials and `.env` files out of reach of any agent that runs a model.
 

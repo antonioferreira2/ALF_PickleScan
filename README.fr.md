@@ -113,7 +113,7 @@ Un fichier peut passer le contrôle d'empreinte et rester hostile. Ici, l'emprei
 - **Aucune analyse du comportement.** L'outil vérifie le fichier, pas ce que fait le modèle quand il s'exécute.
 - **L'analyse des pickles utilise une liste de fonctions dangereuses connues.** Une charge utile nouvelle, absente de la liste, peut passer. Les appels sans import identifiable sont marqués en jaune pour cette raison.
 - **Faire confiance à l'empreinte.** L'empreinte prouve que le fichier correspond à ce qui a été publié, pas que l'auteur est digne de confiance.
-- **GGUF et safetensors ne sont validés que structurellement.** Cela confirme que le fichier est bien formé, pas que les poids sont bons ou honnêtes.
+- **GGUF et safetensors sont validés structurellement, y compris le chat template des GGUF et la taille des tenseurs ; les poids eux-mêmes ne sont pas évalués.** Un fichier peut être parfaitement bien formé et rester un modèle malhonnête.
 - **Les portes dérobées dans les poids ne sont pas détectées.** Les scanners vérifient si un fichier exécute du code au chargement. Un modèle empoisonné n'a pas besoin d'exécuter du code : il peut se comporter mal seulement lorsqu'il est déclenché, et il peut ordonner à un agent local de lire des fichiers ou d'envoyer des données quelque part. L'outil ne peut pas le voir.
 - **Les serveurs locaux et les agents font partie du risque.** Gardez les serveurs d'inférence locaux (par exemple Ollama) liés à `127.0.0.1`, ne les exposez pas au réseau sans authentification, et gardez les identifiants et les fichiers `.env` hors de portée de tout agent qui exécute un modèle.
 
