@@ -87,6 +87,9 @@ I codici di uscita facilitano l'uso in script e pipeline CI: `0` verde, `1` gial
 
 Un risultato verde non viene **mai** mostrato senza un hash di riferimento confermato.
 
+![ALF_picklescan con risultato rosso, che mostra il comando di download ed esecuzione trovato nel file](screenshots/gui-red.png)
+
+Un file può superare il controllo dell'hash e restare ostile. Qui l'hash è confermato e il risultato è rosso, perché il file contiene un comando di download ed esecuzione. Il campione è stato generato per questa cattura: si limita a *referenziare* la funzione, senza mai eseguirla.
 ## Limitazioni
 
 - **Non è una garanzia di sicurezza.** Un modello malevolo addestrato a comportarsi male solo con un trigger specifico può superare tutti i test.

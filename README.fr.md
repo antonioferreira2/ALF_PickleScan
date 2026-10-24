@@ -87,6 +87,9 @@ Les codes de sortie facilitent l'usage dans des scripts et des pipelines CI : `0
 
 Un résultat vert n'est **jamais** affiché sans une empreinte de référence confirmée.
 
+![ALF_picklescan affichant un verdict rouge, avec la commande de téléchargement et d'exécution trouvée dans le fichier](screenshots/gui-red.png)
+
+Un fichier peut passer le contrôle d'empreinte et rester hostile. Ici, l'empreinte est confirmée et le verdict est rouge, car le fichier transporte une commande de téléchargement et d'exécution. L'échantillon a été généré pour cette capture : il ne fait que *référencer* la fonction, sans jamais l'exécuter.
 ## Limites
 
 - **Pas une garantie de sécurité.** Un modèle malveillant entraîné à mal se comporter seulement sous un déclencheur précis peut réussir tous les tests.

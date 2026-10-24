@@ -87,6 +87,9 @@ Os códigos de saída permitem usá-lo em scripts e pipelines de CI: `0` verde, 
 
 Um resultado verde **nunca** aparece sem um hash de referência confirmado.
 
+![ALF_picklescan com resultado vermelho, mostrando o comando de download e execução encontrado no ficheiro](screenshots/gui-red.png)
+
+Um ficheiro pode ter o hash confirmado e continuar a ser hostil. Aqui o hash confere e o resultado é vermelho, porque o ficheiro transporta um comando de download e execução. A amostra foi gerada para esta captura: apenas *refere* a função, nunca a executa.
 ## Limitações
 
 - **Não é uma garantia de segurança.** Um modelo malicioso treinado para se comportar mal apenas com um gatilho específico pode passar em todos os testes.

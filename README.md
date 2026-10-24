@@ -87,6 +87,9 @@ Exit codes make it easy to use in scripts and CI pipelines: `0` green, `1` yello
 
 A green result is **never** shown without a confirmed reference hash.
 
+![ALF_picklescan showing a red verdict, with the download-and-run command found in the file](screenshots/gui-red.png)
+
+A file can pass the hash check and still be hostile. Here the hash is confirmed and the verdict is red, because the file carries a download-and-run command. The sample was generated for this screenshot: it only *references* the function and never runs anything.
 ## Limitations
 
 - **Not a safety guarantee.** A malicious model trained to behave badly only under a specific trigger can pass every test.
