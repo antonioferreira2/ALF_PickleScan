@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="ALF_picklescan" width="150"></p>
+
 # ALF_picklescan
 
 **Vérificateur gratuit et open source de fichiers de modèles d'IA.** Avant de charger un modèle que vous avez téléchargé, vérifiez son intégrité, sa structure et s'il cache du code dangereux. Compatible avec les fichiers **GGUF**, **safetensors** et **pickle/PyTorch** (`.bin`, `.pt`, `.pth`, `.pkl`). Windows et Linux. Aucune installation, aucune connaissance en programmation nécessaire.
@@ -129,6 +131,7 @@ Seul le nécessaire pour utiliser, compiler et améliorer l'outil est publié ic
 | `ALF_picklescan_gui.py` | Interface graphique (Tk) |
 | `i18n.py` | Traductions de l'interface (EN, PT, FR, ES, IT, ZH) |
 | `requirements.txt` | Version figée de picklescan, la seule dépendance externe |
+| `assets/logo.png` | Logo du projet, utilisé en haut des README |
 | `build_exe.bat`, `build_linux.sh` | Compilations reproductibles pour Windows et Linux |
 | `tests/test_smoke.py` | Tests automatisés avec des échantillons inoffensifs générés à la volée |
 | `screenshots/` | Images utilisées dans la documentation |
