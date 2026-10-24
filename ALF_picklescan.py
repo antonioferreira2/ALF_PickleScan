@@ -26,7 +26,6 @@ import argparse
 import hashlib
 import html
 import json
-import os
 import pickletools
 import re
 import shutil
@@ -438,8 +437,11 @@ def run_picklescan(path: Path):
         return embutido
 
     if not getattr(sys, "frozen", False):
+        # Testa se o pacote importa mesmo: `python -m picklescan` falharia
+        # com um código de erro em vez de "não instalado". O `__import__` evita
+        # um nome por usar dentro do `try`.
         try:
-            import picklescan  # noqa: F401
+            __import__("picklescan")
         except ImportError:
             pass
         else:
