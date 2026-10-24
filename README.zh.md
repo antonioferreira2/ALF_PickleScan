@@ -144,8 +144,7 @@ python ALF_picklescan.py model.gguf --sha256 <hash>
 
 - **可执行文件** — 放在 [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases) 中，这样新的克隆保持很小，提交历史也不会被二进制文件占满；
 - 构建产物（`build/`、`dist/`、`*.spec`）、生成的报告（`ALF_relatorios/`）和本地的 `ALF_whitelist.txt`；
-- 任何**模型文件**，以及任何可能被用来攻击他人的测试样本；
-- 关于发布计划的内部文档。
+- 任何**模型文件**，以及任何可能被用来攻击他人的测试样本。
 
 要从源代码构建，请在 Windows 上运行 `build_exe.bat`，在 Linux 上运行 `./build_linux.sh`。两者都需要 Python 3.11 或更新版本，并生成已包含 picklescan 的单文件可执行程序。
 
@@ -157,7 +156,8 @@ python ALF_picklescan.py model.gguf --sha256 <hash>
 2. **v2.2：载荷证据。** ✅ 当文件引用危险函数时，报告会显示它将要接收的参数——命令、URL 或编码数据块——并标记 shell、下载、窃取凭据、持久化和混淆等模式。
 3. **v2.3：翻译校验消息。** ✅ 检查项名称、细节和报告均跟随所选语言，覆盖六种语言。
 4. **v2.4：更多检测与自动化。** ✅ 自主检测 `pydoc`、`timeit` 和 `pip`，以及间接调用导入项；GGUF 聊天模板；safetensors 张量大小；签名的构建证明；用于 CI 的 `--json` 输出。
-5. **v3.0：更多格式。** 支持 ONNX 及其他模型格式。
+5. **v2.5：正确性与健壮性。** ✅ 修正了哈希以 `sha256:` 开头或为大写时出现的误报；无效的 safetensors 头部、被截断的 ZIP 和超长模型名不再中断分析；GGUF 大数组以全速读取；命令行参数错误不再以退出码 2 结束；界面遇到无效路径不再崩溃。
+6. **v3.0：更多格式。** 支持 ONNX 及其他模型格式。
 
 ## 参与贡献
 

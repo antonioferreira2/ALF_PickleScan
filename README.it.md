@@ -144,8 +144,7 @@ Qui è pubblicato solo il necessario per usare, compilare e migliorare lo strume
 
 - gli **eseguibili** — sono nelle [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases), così un clone nuovo resta leggero e la cronologia non si riempie di binari;
 - i risultati di compilazione (`build/`, `dist/`, `*.spec`), i rapporti generati (`ALF_relatorios/`) e il file locale `ALF_whitelist.txt`;
-- **file di modelli** di qualsiasi tipo, e qualsiasi campione di test che potrebbe essere usato per attaccare qualcuno;
-- i documenti interni di pianificazione del lancio.
+- **file di modelli** di qualsiasi tipo, e qualsiasi campione di test che potrebbe essere usato per attaccare qualcuno.
 
 Per compilare dai sorgenti, esegui `build_exe.bat` su Windows o `./build_linux.sh` su Linux. Entrambi richiedono Python 3.11 o successivo e producono un eseguibile unico che include già picklescan.
 
@@ -157,7 +156,8 @@ Piano pubblico. Gli elementi possono cambiare; i progressi sono nelle [Issues](h
 2. **v2.2: prova del payload.** ✅ Quando viene referenziata una funzione pericolosa, il rapporto mostra gli argomenti che riceverebbe — il comando, l'URL, il blocco codificato — e segnala pattern di shell, download, furto di credenziali, persistenza e offuscamento.
 3. **v2.3: messaggi di verifica tradotti.** ✅ Nomi, dettagli e rapporto seguono la lingua scelta, in tutte e sei le lingue.
 4. **v2.4: più rilevamenti e automazione.** ✅ Rilevamento proprio di `pydoc`, `timeit` e `pip`, più gli import di indirezione; template di chat dei GGUF; dimensioni dei tensori safetensors; attestazioni di build firmate; output `--json` per la CI.
-5. **v3.0: più formati.** Supporto per ONNX e altri formati di modello.
+5. **v2.5: correttezza e robustezza.** ✅ Corregge il falso rosso quando l'hash era incollato con `sha256:` o in maiuscole; intestazioni safetensors non valide, ZIP troncati e nomi di modello molto lunghi non interrompono più l'analisi; i grandi array GGUF vengono letti a piena velocità; un errore da riga di comando non esce più con il codice 2; l'interfaccia non si blocca più con un percorso non valido.
+6. **v3.0: più formati.** Supporto per ONNX e altri formati di modello.
 
 ## Contribuire
 

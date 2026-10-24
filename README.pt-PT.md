@@ -144,8 +144,7 @@ Aqui só está publicado o necessário para usar, compilar e melhorar a ferramen
 
 - os **executáveis** — ficam nas [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases), para um clone novo continuar pequeno e o histórico não encher de binários;
 - resultados de build (`build/`, `dist/`, `*.spec`), relatórios gerados (`ALF_relatorios/`) e o `ALF_whitelist.txt` local;
-- **ficheiros de modelos** de qualquer tipo, e qualquer amostra de teste que possa ser usada para atacar alguém;
-- documentos internos de planeamento do lançamento.
+- **ficheiros de modelos** de qualquer tipo, e qualquer amostra de teste que possa ser usada para atacar alguém.
 
 Para compilar a partir do código, corre `build_exe.bat` no Windows ou `./build_linux.sh` no Linux. Ambos precisam de Python 3.11 ou mais recente e produzem um executável único que já inclui o picklescan.
 
@@ -157,7 +156,8 @@ Plano público. Os itens podem mudar; o progresso está nas [Issues](https://git
 2. **v2.2: evidência do payload.** ✅ Quando uma função perigosa é referida, o relatório mostra os argumentos que ela receberia — o comando, o URL, o bloco codificado — e assinala padrões de shell, download, roubo de credenciais, persistência e ofuscação.
 3. **v2.3: mensagens de verificação traduzidas.** ✅ Nomes, detalhes e relatório seguem o idioma escolhido, nos seis idiomas.
 4. **v2.4: mais deteções e automação.** ✅ Deteção própria de `pydoc`, `timeit` e `pip`, mais imports de indireção; template de chat dos GGUF; tamanhos dos tensores em safetensors; atestações de build assinadas; saída `--json` para CI.
-5. **v3.0: mais formatos.** Suporte para ONNX e outros formatos de modelo.
+5. **v2.5: correção e robustez.** ✅ Corrige o vermelho falso quando o hash era colado com `sha256:` ou em maiúsculas; cabeçalhos safetensors inválidos, ZIP truncados e nomes de modelo muito longos já não interrompem a análise; arrays grandes dos GGUF são lidos a toda a velocidade; um erro de linha de comandos deixa de sair com o código 2; a interface já não para com um caminho inválido.
+6. **v3.0: mais formatos.** Suporte para ONNX e outros formatos de modelo.
 
 ## Como contribuir
 

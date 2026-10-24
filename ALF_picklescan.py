@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ALF_picklescan v2.4
+ALF_picklescan v2.5
 Verificação de modelos de IA antes de os usar.
 
 Formatos suportados:
@@ -40,7 +40,7 @@ from pathlib import Path
 
 from i18n import DEFAULT_LANG, STRINGS, t
 
-VERSION = "2.4"
+VERSION = "2.5"
 if getattr(sys, "frozen", False):
     # Executável empacotado: usar a pasta onde está o .exe (não a pasta temporária do PyInstaller)
     BASE_DIR = Path(sys.executable).resolve().parent

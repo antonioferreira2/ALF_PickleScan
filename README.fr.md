@@ -144,8 +144,7 @@ Seul le nécessaire pour utiliser, compiler et améliorer l'outil est publié ic
 
 - les **exécutables** — ils sont dans les [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases), pour qu'un nouveau clone reste léger et que l'historique ne se remplisse pas de binaires ;
 - les résultats de compilation (`build/`, `dist/`, `*.spec`), les rapports générés (`ALF_relatorios/`) et le fichier local `ALF_whitelist.txt` ;
-- les **fichiers de modèles** de toute sorte, et tout échantillon de test pouvant servir à attaquer quelqu'un ;
-- les documents internes de préparation du lancement.
+- les **fichiers de modèles** de toute sorte, et tout échantillon de test pouvant servir à attaquer quelqu'un .
 
 Pour compiler depuis les sources, lancez `build_exe.bat` sous Windows ou `./build_linux.sh` sous Linux. Les deux nécessitent Python 3.11 ou plus récent et produisent un exécutable unique qui inclut déjà picklescan.
 
@@ -157,7 +156,8 @@ Plan public. Les éléments peuvent changer ; l'avancement est suivi dans les [I
 2. **v2.2 : preuves de charge utile.** ✅ Lorsqu'une fonction dangereuse est référencée, le rapport affiche les arguments qu'elle recevrait — la commande, l'URL, le bloc encodé — et signale les motifs de shell, téléchargement, vol d'identifiants, persistance et obfuscation.
 3. **v2.3 : messages de vérification traduits.** ✅ Noms, détails et rapport suivent la langue choisie, dans les six langues.
 4. **v2.4 : plus de détections et d'automatisation.** ✅ Détection propre de `pydoc`, `timeit` et `pip`, plus les imports d'indirection ; modèle de conversation des GGUF ; tailles des tenseurs safetensors ; attestations de build signées ; sortie `--json` pour la CI.
-5. **v3.0 : plus de formats.** Prise en charge d'ONNX et d'autres formats de modèle.
+5. **v2.5 : correction et robustesse.** ✅ Corrige le faux rouge lorsque l'empreinte était collée avec `sha256:` ou en majuscules ; les en-têtes safetensors invalides, les ZIP tronqués et les noms de modèle très longs n'interrompent plus l'analyse ; les grands tableaux GGUF sont lus à pleine vitesse ; une erreur de ligne de commande ne sort plus avec le code 2 ; l'interface ne s'arrête plus sur un chemin invalide.
+6. **v3.0 : plus de formats.** Prise en charge d'ONNX et d'autres formats de modèle.
 
 ## Contribuer
 

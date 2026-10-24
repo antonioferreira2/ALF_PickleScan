@@ -144,8 +144,7 @@ Only what is needed to use, build and improve the tool is published here:
 
 - the **executables** — they live in [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases), so that a new clone stays small and history is not bloated with binaries;
 - build output (`build/`, `dist/`, `*.spec`), generated reports (`ALF_relatorios/`) and the local `ALF_whitelist.txt`;
-- **model files** of any kind, and any test sample that could be used to attack someone;
-- internal planning documents about the launch.
+- **model files** of any kind, and any test sample that could be used to attack someone.
 
 To build from source, run `build_exe.bat` on Windows or `./build_linux.sh` on Linux. Both need Python 3.11 or newer and produce a single-file executable that already includes picklescan.
 
@@ -157,7 +156,8 @@ Public plan. Items may change; progress is tracked in [Issues](https://github.co
 2. **v2.2: payload evidence.** ✅ When a dangerous function is referenced, the report shows the arguments it would receive — the command, the URL, the encoded block — plus shell, download, credential-theft, persistence and obfuscation patterns.
 3. **v2.3: translated verification messages.** ✅ Check names, details and the report follow the chosen language, in all six languages.
 4. **v2.4: more detections and automation.** ✅ Own detection of `pydoc`, `timeit` and `pip`, plus indirection imports; GGUF chat template; tensor sizes in safetensors; signed build attestations; `--json` output for CI.
-5. **v3.0: more formats.** Support for ONNX and other model formats.
+5. **v2.5: correctness and robustness.** ✅ Fixes the false warning when the hash was pasted with `sha256:` or in upper case; malformed safetensors headers, truncated ZIPs and very long model names no longer interrupt the analysis; large GGUF arrays are read at full speed; a command-line mistake no longer exits with code 2; the interface no longer stops on an invalid path.
+6. **v3.0: more formats.** Support for ONNX and other model formats.
 
 ## Contributing
 

@@ -144,8 +144,7 @@ Aquí solo se publica lo necesario para usar, compilar y mejorar la herramienta:
 
 - los **ejecutables** — están en las [Releases](https://github.com/antonioferreira2/ALF_PickleScan/releases), para que un clon nuevo siga siendo pequeño y el historial no se llene de binarios;
 - resultados de compilación (`build/`, `dist/`, `*.spec`), informes generados (`ALF_relatorios/`) y el `ALF_whitelist.txt` local;
-- **archivos de modelos** de cualquier tipo, y cualquier muestra de prueba que pudiera usarse para atacar a alguien;
-- documentos internos de planificación del lanzamiento.
+- **archivos de modelos** de cualquier tipo, y cualquier muestra de prueba que pudiera usarse para atacar a alguien.
 
 Para compilar desde el código, ejecuta `build_exe.bat` en Windows o `./build_linux.sh` en Linux. Ambos necesitan Python 3.11 o posterior y producen un ejecutable único que ya incluye picklescan.
 
@@ -157,7 +156,8 @@ Plan público. Los elementos pueden cambiar; el avance se sigue en las [Issues](
 2. **v2.2: pruebas de la carga útil.** ✅ Cuando se referencia una función peligrosa, el informe muestra los argumentos que recibiría — el comando, la URL, el bloque codificado — y señala patrones de shell, descarga, robo de credenciales, persistencia y ofuscación.
 3. **v2.3: mensajes de verificación traducidos.** ✅ Nombres, detalles e informe siguen el idioma elegido, en los seis idiomas.
 4. **v2.4: más detecciones y automatización.** ✅ Detección propia de `pydoc`, `timeit` y `pip`, más importaciones de indirección; plantilla de chat de los GGUF; tamaños de los tensores en safetensors; atestaciones de compilación firmadas; salida `--json` para CI.
-5. **v3.0: más formatos.** Soporte de ONNX y otros formatos de modelo.
+5. **v2.5: corrección y robustez.** ✅ Corrige el rojo falso cuando el hash se pegaba con `sha256:` o en mayúsculas; las cabeceras safetensors inválidas, los ZIP truncados y los nombres de modelo muy largos ya no interrumpen el análisis; los arrays grandes de GGUF se leen a plena velocidad; un error de línea de comandos deja de salir con el código 2; la interfaz ya no falla con una ruta inválida.
+6. **v3.0: más formatos.** Soporte de ONNX y otros formatos de modelo.
 
 ## Contribuir
 
