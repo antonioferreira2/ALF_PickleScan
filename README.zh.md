@@ -80,6 +80,8 @@ gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_Pi
 4. 点击 **Verify model**（验证模型）。
 5. 查看结论。点击 **Open report**（打开报告）查看完整细节。
 
+你也可以**把模型文件拖到可执行文件上**：窗口会打开并立即分析该文件。在 Linux 上，把路径作为参数传入 — `./ALF_picklescan model.gguf`。
+
 报告保存在程序旁边的 `ALF_relatorios/` 目录中。
 
 命令行（Linux 或 Windows，需已安装 Python）：

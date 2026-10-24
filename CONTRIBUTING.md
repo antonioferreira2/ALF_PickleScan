@@ -15,8 +15,14 @@ git clone https://github.com/antonioferreira2/ALF_PickleScan.git
 cd ALF_PickleScan
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install picklescan==1.0.5
+pip install -r requirements.txt
 python ALF_picklescan_gui.py
+```
+
+A versão do picklescan vem do `requirements.txt`, para não haver duas cópias do número. Também podes abrir a interface já com um modelo, o mesmo que arrastar o ficheiro para cima do executável:
+
+```
+python ALF_picklescan_gui.py modelo.gguf
 ```
 
 No Linux, a interface precisa de `python3-tk` (`sudo apt install python3-tk`). Precisa de Python 3.11 ou mais recente para compilar os executáveis.

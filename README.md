@@ -80,6 +80,8 @@ Other platforms: the source code runs anywhere Python and Tk are available (macO
 4. Click **Verify model**.
 5. Read the verdict. Click **Open report** for the full details.
 
+You can also **drag the model file onto the executable**: the window opens already analysing that file. On Linux, pass the path as an argument — `./ALF_picklescan model.gguf`.
+
 The report is saved next to the program, in `ALF_relatorios/`.
 
 Command line (Linux or Windows, with Python installed):
