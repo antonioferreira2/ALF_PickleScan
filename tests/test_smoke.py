@@ -12,7 +12,9 @@ Uso:
     python tests/test_smoke.py
 """
 
+import ast
 import collections
+import io
 import json
 import pickle
 import struct
@@ -107,6 +109,29 @@ class TestPickle(Base):
         self.assertEqual(code, 1)
         self.assertEqual(self.state_of(checks, "Integridade (hash)"), core.AVISO)
 
+    def test_extension_opcodes_are_never_green(self):
+        """EXT1/EXT2/EXT4 chamam nomes que vivem fora do ficheiro."""
+        p = write(self.tmp / "extensao.pkl", b"\x80\x02\x82\x01.")
+        streams = core.analyse_pickle(p)
+        self.assertEqual(streams[0][1]["unresolved"], 1)
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(self.state_of(checks, "Referências não resolvidas"), core.AVISO)
+        self.assertEqual(label, "AMARELO", checks)
+
+    def test_hash_from_a_model_page_is_accepted_in_any_format(self):
+        """Maiúsculas, espaços, duas linhas ou prefixo sha256: são o mesmo hash."""
+        p = write(self.tmp / "modelo.pkl", benign_pickle())
+        digest = core.sha256_of(p)
+        formatos = [digest.upper(),
+                    " ".join(digest[i:i + 16] for i in range(0, 64, 16)),
+                    "sha256:" + digest,
+                    "SHA256:" + digest.upper(),
+                    digest[:32] + "\n" + digest[32:]]
+        for texto in formatos:
+            checks, _digest, label, _code = self.verify(p, texto)
+            self.assertEqual(self.state_of(checks, "Integridade (hash)"), core.OK, texto)
+            self.assertEqual(label, "VERDE", texto)
+
     def test_hash_mismatch_is_red(self):
         p = write(self.tmp / "modelo.pkl", benign_pickle())
         _checks, _digest, label, code = self.verify(p, "0" * 64)
@@ -150,6 +175,32 @@ class TestPickle(Base):
         checks, _digest, _label, _code = self.verify(p, core.sha256_of(p))
         self.assertEqual(self.state_of(checks, "Ficheiros executáveis dentro do modelo"), core.OK)
 
+    def test_corrupt_zip_is_red_and_does_not_abort_the_analysis(self):
+        """ZIP que passa no is_zipfile mas falha ao abrir: reprovado, sem exceção."""
+        valido = self.tmp / "valido.bin"
+        with zipfile.ZipFile(valido, "w") as z:
+            z.writestr("archive/data.pkl", benign_pickle())
+        base = bytearray(valido.read_bytes())
+
+        danificado = None
+        for i in range(len(base)):
+            tentativa = bytearray(base)
+            tentativa[i] ^= 0xFF
+            if not zipfile.is_zipfile(io.BytesIO(tentativa)):
+                continue
+            try:
+                with zipfile.ZipFile(io.BytesIO(tentativa)) as z:
+                    z.namelist()
+            except zipfile.BadZipFile:
+                danificado = bytes(tentativa)
+                break
+        self.assertIsNotNone(danificado, "não foi possível construir um ZIP danificado")
+
+        p = write(self.tmp / "danificado.bin", danificado)
+        checks, _digest, label, _code = self.verify(p, core.sha256_of(p))
+        self.assertEqual(label, "VERMELHO", checks)
+        self.assertEqual(self.state_of(checks, "Estrutura do arquivo (zip)"), core.REPROVADO)
+
     def test_report_is_written(self):
         p = write(self.tmp / "modelo.pkl", benign_pickle())
         checks, digest, label, code = self.verify(p, core.sha256_of(p))
@@ -159,6 +210,62 @@ class TestPickle(Base):
         self.assertIn(digest, texto)
         self.assertIn("Limitações", texto)
         Path(report).unlink()
+
+
+class TestReport(Base):
+    """O relatório nunca pode perder uma análise já feita."""
+
+    def test_long_model_name_does_not_break_the_report(self):
+        p = write(self.tmp / ("m" * 200 + ".pkl"), benign_pickle())
+        checks, digest, label, _code = self.verify(p, core.sha256_of(p))
+        report = core.gerar_relatorio(p, digest, label, "Aprovado", checks)
+        self.assertIsNotNone(report)
+        self.assertLessEqual(len(Path(report).name), 120)
+        self.assertTrue(Path(report).is_file())
+        Path(report).unlink()
+
+    def test_unsafe_characters_in_name_are_replaced(self):
+        p = write(self.tmp / "modelo com espacos (v1)! .pkl", benign_pickle())
+        checks, digest, label, _code = self.verify(p, core.sha256_of(p))
+        report = core.gerar_relatorio(p, digest, label, "Aprovado", checks)
+        self.assertIsNotNone(report)
+        nome = Path(report).name
+        for proibido in (" ", "(", ")", "!"):
+            self.assertNotIn(proibido, nome)
+        self.assertTrue(nome.startswith("relatorio_modelo_com_espacos"))
+        Path(report).unlink()
+
+    def test_read_only_report_folder_falls_back_to_a_writable_one(self):
+        p = write(self.tmp / "modelo.pkl", benign_pickle())
+        checks, digest, label, _code = self.verify(p, core.sha256_of(p))
+        # Uma pasta “bloqueada”: existe um ficheiro onde a pasta devia estar.
+        bloqueador = write(self.tmp / "bloqueado", b"nao sou uma pasta")
+        with mock.patch.object(core, "REPORT_DIR", bloqueador / "ALF_relatorios"), \
+                mock.patch.object(core.tempfile, "gettempdir", return_value=str(self.tmp)):
+            report = core.gerar_relatorio(p, digest, label, "Aprovado", checks)
+        self.assertIsNotNone(report)
+        self.assertTrue(Path(report).is_file())
+        self.assertEqual(Path(report).parent, self.tmp / "ALF_relatorios")
+
+    def test_report_escapes_html_that_comes_from_the_file(self):
+        """Um modelo nao pode injetar HTML no relatorio que abre no browser."""
+        p = write(self.tmp / "injecao.pkl",
+                  pickle.dumps({"url": "http://x/<script>alert(1)</script>"}, protocol=4))
+        checks, digest, label, _code = self.verify(p, core.sha256_of(p))
+        report = core.gerar_relatorio(p, digest, label, "Nao usar", checks)
+        self.assertIsNotNone(report)
+        texto = Path(report).read_text(encoding="utf-8")
+        self.assertNotIn("<script>", texto)
+        self.assertIn("&lt;script&gt;", texto)
+        Path(report).unlink()
+
+    def test_report_is_none_when_no_folder_works(self):
+        p = write(self.tmp / "modelo.pkl", benign_pickle())
+        checks, digest, label, _code = self.verify(p, core.sha256_of(p))
+        bloqueador = write(self.tmp / "bloqueado", b"nao sou uma pasta")
+        with mock.patch.object(core, "REPORT_DIR", bloqueador / "a"), \
+                mock.patch.object(core.tempfile, "gettempdir", return_value=str(bloqueador)):
+            self.assertIsNone(core.gerar_relatorio(p, digest, label, "Aprovado", checks))
 
 
 # Pickle que referencia os.system com um comando de download: o comando nunca é executado.
@@ -432,6 +539,14 @@ class TestSafetensors(Base):
         estado, _detalhe = core.check_safetensors(p)
         self.assertEqual(estado, core.REPROVADO)
 
+    def test_json_header_that_is_not_an_object(self):
+        """JSON válido mas que não é um objeto: reprovado, nunca uma exceção."""
+        for i, bruto in enumerate((b"[1, 2, 3]", b"42", b'"texto"', b"null", b"true")):
+            p = write(self.tmp / f"cabecalho{i}.safetensors",
+                      struct.pack("<Q", len(bruto)) + bruto + b"\x00" * 8)
+            estado, _detalhe = core.check_safetensors(p)
+            self.assertEqual(estado, core.REPROVADO, bruto)
+
 
 class TestGGUF(Base):
     def test_valid_gguf(self):
@@ -571,6 +686,34 @@ class TestJson(Base):
         self.assertEqual(dados["verdict"], "GREEN")
         self.assertEqual(dados["sha256"], core.sha256_of(p))
 
+    def test_missing_file_with_json_still_returns_json(self):
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "ALF_picklescan.py"),
+             str(self.tmp / "nao_existe.gguf"), "--json", "--lang", "en"],
+            capture_output=True, text=True, encoding="utf-8",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.assertEqual(r.returncode, 3, r.stderr)
+        dados = json.loads(r.stdout)
+        self.assertEqual(dados["exit_code"], 3)
+        self.assertIn("not found", dados["error"].lower())
+        self.assertEqual(dados["checks"], [])
+
+    def test_usage_error_does_not_look_like_a_red_verdict(self):
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "ALF_picklescan.py"), "x.gguf", "--lang", "xx"],
+            capture_output=True, text=True, encoding="utf-8",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.assertEqual(r.returncode, 3, r.stderr)
+        self.assertIn("--lang", r.stderr)
+
+    def test_interactive_mode_with_closed_stdin_exits_cleanly(self):
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "ALF_picklescan.py"), "--lang", "en"],
+            capture_output=True, text=True, encoding="utf-8", stdin=subprocess.DEVNULL,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.assertEqual(r.returncode, 3, r.stderr)
+        self.assertNotIn("Traceback", r.stderr)
+
 
 class TestArranque(unittest.TestCase):
     """Arrastar um modelo para cima do executável passa-o como argumento."""
@@ -617,6 +760,29 @@ class TestI18n(unittest.TestCase):
             self.assertIn(code, STRINGS, f"idioma em falta: {code}")
             faltam = base - set(STRINGS[code])
             self.assertFalse(faltam, f"{code}: chaves em falta {sorted(faltam)}")
+
+    def test_every_translation_key_used_in_the_code_exists_in_all_languages(self):
+        """Uma chave nova no código tem de nascer já nas seis línguas."""
+        from i18n import LANGUAGES, STRINGS
+
+        arvore = ast.parse((ROOT / "ALF_picklescan.py").read_text(encoding="utf-8"))
+        chaves = set()
+        for no in ast.walk(arvore):
+            if not isinstance(no, ast.Call):
+                continue
+            nome = getattr(no.func, "id", "")
+            posicao = {"_check": 2, "t": 0, "_GGUFProblem": 0}.get(nome)
+            if posicao is None or len(no.args) <= posicao:
+                continue
+            arg = no.args[posicao]
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                chaves.add(arg.value)
+        self.assertGreater(len(chaves), 40, "a análise estática deixou de encontrar chaves")
+        for chave in sorted(chaves):
+            if chave.startswith(("verdict_", "action_")):
+                continue
+            for code, _name in LANGUAGES:
+                self.assertIn(chave, STRINGS[code], f"{code}: {chave}")
 
     def test_missing_key_falls_back_to_english(self):
         from i18n import t

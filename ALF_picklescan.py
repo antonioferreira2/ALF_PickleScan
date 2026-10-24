@@ -33,6 +33,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -302,6 +303,12 @@ def _analyse_stream(fh) -> dict:
                 unresolved += 1
                 current, pending = None, []
             recent_strings = []
+        elif name in ("EXT1", "EXT2", "EXT4"):
+            # Extensões do copyreg: o nome do que é chamado não está no ficheiro,
+            # vem de um registo do processo. Não dá para verificar: conta como
+            # referência não resolvida, para nunca sair verde.
+            unresolved += 1
+            current, pending = None, []
         elif name in CALL_OPCODES:
             if current is not None and len(calls) < MAX_EVIDENCE * 5:
                 calls.append((current, list(pending)))
@@ -315,7 +322,7 @@ def analyse_pickle(path: Path) -> list:
     results = []
     if zipfile.is_zipfile(path):
         with zipfile.ZipFile(path) as z:
-            names = [n for n in z.namelist() if n.endswith(".pkl")]
+            names = [n for n in z.namelist() if n.lower().endswith(".pkl")]
             if not names:
                 raise ValueError("no .pkl entry (data.pkl)")
             for n in names:
@@ -346,6 +353,17 @@ def check_globals(globals_found, whitelist):
         elif full not in whitelist:
             unknown.add(full)
     return dict(sorted(danger.items())), sorted(unknown)
+
+
+def normalizar_hash(texto: str) -> str:
+    """Hash como o autor o publica, pronto a comparar.
+
+    Páginas de modelos mostram o hash em maiúsculas, com espaços, em duas
+    linhas ou com o prefixo `sha256:`. Tudo isso é o mesmo hash e não pode dar
+    um vermelho falso de "ficheiro alterado".
+    """
+    limpo = re.sub(r"\s+", "", str(texto)).lower()
+    return limpo.removeprefix("sha256:").removeprefix("0x")
 
 
 def _texto_curto(texto, limite=160) -> str:
@@ -407,7 +425,7 @@ def run_picklescan(path: Path):
     if exe:
         try:
             r = subprocess.run([exe, "--path", str(path)], capture_output=True,
-                               text=True, timeout=7200,
+                               text=True, encoding="utf-8", errors="replace", timeout=7200,
                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except subprocess.TimeoutExpired:
             return 2, "picklescan timed out"
@@ -427,7 +445,8 @@ def run_picklescan(path: Path):
         else:
             try:
                 r = subprocess.run([sys.executable, "-m", "picklescan", "--path", str(path)],
-                                   capture_output=True, text=True, timeout=7200,
+                                   capture_output=True, text=True, encoding="utf-8",
+                                   errors="replace", timeout=7200,
                                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             except subprocess.TimeoutExpired:
                 return 2, "picklescan timed out"
@@ -436,22 +455,41 @@ def run_picklescan(path: Path):
     return None, "picklescan is not installed"
 
 
+def _zip_entries(path: Path):
+    """Nomes dentro do ZIP, ou None se o contentor não se consegue ler.
+
+    `zipfile.is_zipfile` só olha para o fim do ficheiro: um ZIP truncado ou
+    corrompido no meio passa nesse teste e falha depois, ao abrir.
+    """
+    try:
+        with zipfile.ZipFile(path) as z:
+            return z.namelist()
+    except (zipfile.BadZipFile, OSError, RuntimeError, NotImplementedError):
+        return None
+
+
 def pickle_checks(path: Path, whitelist: set) -> list:
     checks = []
 
     # 1. Conteúdo do ZIP (formato PyTorch)
     if zipfile.is_zipfile(path):
-        with zipfile.ZipFile(path) as z:
-            names = z.namelist()
-        bad = tuple(n for n in names if Path(n).suffix.lower() in CODE_EXT_BLOCK)
-        checks.append(_check(
-            "Ficheiros executáveis dentro do modelo", REPROVADO if bad else OK, "chk_exec",
-            (lambda bad: lambda lang: "\n".join(bad[:20]) if bad else t("d_none", lang))(bad)))
-        py = tuple(n for n in names if n.lower().endswith(".py"))
-        if py:
+        names = _zip_entries(path)
+        if names is None:
+            # Contentor danificado (descarregamento interrompido, ficheiro
+            # remontado à mão): reprovado, sem rebentar a análise toda. Não se
+            # acrescenta "sem executáveis": não foi possível olhar lá para dentro.
+            checks.append(_check("Estrutura do arquivo (zip)", REPROVADO, "chk_zip",
+                                 lambda lang: t("d_zip_bad", lang)))
+        else:
+            bad = tuple(n for n in names if Path(n).suffix.lower() in CODE_EXT_BLOCK)
             checks.append(_check(
-                "Código Python dentro do modelo", AVISO, "chk_pycode",
-                (lambda py: lambda lang: t("d_pycode", lang, list="\n".join(py[:20])))(py)))
+                "Ficheiros executáveis dentro do modelo", REPROVADO if bad else OK, "chk_exec",
+                (lambda bad: lambda lang: "\n".join(bad[:20]) if bad else t("d_none", lang))(bad)))
+            py = tuple(n for n in names if n.lower().endswith(".py"))
+            if py:
+                checks.append(_check(
+                    "Código Python dentro do modelo", AVISO, "chk_pycode",
+                    (lambda py: lambda lang: t("d_pycode", lang, list="\n".join(py[:20])))(py)))
 
     # 2. picklescan
     code, saida = run_picklescan(path)
@@ -620,6 +658,10 @@ def check_safetensors(path: Path):
         except Exception as e:
             return REPROVADO, (lambda err: lambda lang: t("d_st_json", lang,
                                                           err=err))(str(e))
+    if not isinstance(cab, dict):
+        # JSON válido mas não é o objeto que o formato exige (lista, número,
+        # texto, nulo): nada a validar e não é um safetensors utilizável.
+        return REPROVADO, lambda lang: t("d_st_header", lang)
     limite = size - 8 - n
     count = 0
     intervalos = []
@@ -774,7 +816,13 @@ class _GGUFReader:
             n = self.u64()
             if n > GGUF_MAX_ARRAY:
                 raise _GGUFProblem("d_gguf_bigarray", limit=GGUF_MAX_ARRAY)
-            for _ in range(int(n)):
+            n = int(n)
+            if subtipo in GGUF_SCALARS:
+                # Elementos de tamanho fixo: salta o bloco de uma vez em vez de
+                # iterar milhões de vezes (um GGUF real traz vocabulários grandes).
+                self.saltar(n * GGUF_SCALARS[subtipo][1])
+                return None
+            for _ in range(n):
                 self.valor(subtipo, guardar=False)
             return None
         if tipo not in GGUF_SCALARS:
@@ -889,7 +937,7 @@ def verificar(path: Path, sha_ref, whitelist: set):
     checks.append(_check("SHA-256 calculado", INFO, "chk_sha",
                          (lambda d: lambda lang: d)(digest)))
     if sha_ref:
-        if digest.lower() == sha_ref.strip().lower():
+        if digest.lower() == normalizar_hash(sha_ref):
             checks.append(_check("Integridade (hash)", OK, "chk_integrity",
                                  lambda lang: t("d_integrity_ok", lang)))
         else:
@@ -949,11 +997,31 @@ COR = {"VERDE": "#2e7d32", "AMARELO": "#b28704", "VERMELHO": "#c62828"}
 STATE_KEY = {OK: "state_OK", AVISO: "state_AVISO", REPROVADO: "state_REPROVADO", INFO: "state_INFO"}
 
 
+REPORT_NAME_MAX = 60
+
+
+def _nome_relatorio(path: Path) -> str:
+    """Parte do nome do relatório que vem do ficheiro analisado.
+
+    Um modelo com 250 caracteres no nome gerava um nome de ficheiro acima do
+    limite do sistema (255 bytes no Linux, caminho máximo no Windows) e o
+    relatório falhava no fim de uma análise já feita. Fica curto e sem
+    caracteres que os sistemas de ficheiros recusam.
+    """
+    limpo = re.sub(r"[^\w.-]+", "_", path.stem).strip("._")
+    return limpo[:REPORT_NAME_MAX] or "modelo"
+
+
 def gerar_relatorio(path: Path, digest: str, label: str, acao: str, checks: list,
-                    lang: str = "pt") -> Path:
-    REPORT_DIR.mkdir(exist_ok=True)
+                    lang: str = "pt"):
+    """Escreve o relatório HTML e devolve o caminho, ou None se não foi possível.
+
+    Tenta a pasta ao lado do programa e, se não for possível escrever lá (pasta
+    só de leitura, caminho demasiado longo), a pasta temporária do sistema. Uma
+    análise concluída não se perde por causa do relatório.
+    """
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out = REPORT_DIR / f"relatorio_{path.stem}_{stamp}.html"
+    nome_ficheiro = f"relatorio_{_nome_relatorio(path)}_{stamp}.html"
     e = html.escape
     if label == "VERMELHO":
         itens = "".join(f"<li>{e(t(f'reco_{i}', lang))}</li>" for i in range(1, 6))
@@ -991,8 +1059,18 @@ pre {{ white-space: pre-wrap; word-break: break-all; margin: 0; font-size: .85re
 <table><tr><th>{e(t('rep_check', lang))}</th><th>{e(t('rep_state', lang))}</th><th>{e(t('rep_detail', lang))}</th></tr>{"".join(linhas)}</table>
 <p style="color:#777;font-size:.8rem">ALF_picklescan v{VERSION}</p>
 </body></html>"""
-    out.write_text(doc, encoding="utf-8")
-    return out
+    for pasta in (REPORT_DIR, Path(tempfile.gettempdir()) / "ALF_relatorios"):
+        try:
+            pasta.mkdir(parents=True, exist_ok=True)
+            out = pasta / nome_ficheiro
+            out.write_text(doc, encoding="utf-8")
+            return out
+        except OSError:
+            try:
+                (pasta / nome_ficheiro).unlink()  # não deixar um relatório pela metade
+            except OSError:
+                pass
+    return None
 
 
 # --------------------------------------------------------------- consola
@@ -1009,7 +1087,7 @@ def mostrar(checks, label, acao, report, lang: str = "pt"):
     print("=" * 60)
     print(f" {t('verdict_' + label, lang)} - {t('action_' + label, lang)}")
     print("=" * 60)
-    print(f" {report}")
+    print(f" {report if report else t('rep_no_write', lang)}")
     print()
     if label == "VERMELHO":
         print(t("rep_todo", lang).upper())
@@ -1047,13 +1125,25 @@ def pedir_entrada(lang: str = "pt"):
     return ficheiro, sha
 
 
+class _ArgumentParser(argparse.ArgumentParser):
+    """Erro de utilização sai com 3, não com 2.
+
+    O código 2 significa "vermelho, não usar"; um erro de sintaxe na linha de
+    comandos não pode ser confundido com um modelo perigoso num pipeline.
+    """
+
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        self.exit(3, f"{self.prog}: error: {message}\n")
+
+
 def main() -> int:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
-    ap = argparse.ArgumentParser(description="Verifica modelos de IA antes de os usar.")
+    ap = _ArgumentParser(description="Verifica modelos de IA antes de os usar.")
     ap.add_argument("ficheiro", nargs="?", help="Caminho do modelo (.bin, .pt, .safetensors, .gguf, ...)")
     ap.add_argument("--sha256", default=None, help="SHA-256 publicado pelo autor do modelo")
     ap.add_argument("--lang", default="pt", choices=[code for code, _ in STRINGS.items()] or ["pt"],
@@ -1064,13 +1154,24 @@ def main() -> int:
 
     interativo = args.ficheiro is None
     if interativo:
-        ficheiro, sha = pedir_entrada(args.lang)
+        try:
+            ficheiro, sha = pedir_entrada(args.lang)
+        except (EOFError, KeyboardInterrupt):
+            print()  # stdin fechado ou Ctrl+C: sair sem rasto de exceção
+            return 3
     else:
         ficheiro, sha = args.ficheiro, args.sha256
 
     path = Path(ficheiro).expanduser()
     if not path.is_file():
-        print(t("cli_notfound", args.lang, path=path))
+        if args.json:
+            # Um consumidor de --json não deve receber texto solto no stdout.
+            print(json.dumps({"file": path.name, "sha256": None, "verdict": None,
+                              "action": None, "exit_code": 3, "language": args.lang,
+                              "error": t("cli_notfound", args.lang, path=str(path)),
+                              "checks": []}, ensure_ascii=False, indent=2))
+        else:
+            print(t("cli_notfound", args.lang, path=path))
         return 3
 
     if not args.json:

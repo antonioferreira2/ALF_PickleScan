@@ -234,8 +234,12 @@ class App(tk.Tk):
             self.path_var.set(path)
 
     def start(self):
-        raw = self.path_var.get().strip().strip('"')
-        if not raw or not Path(raw).is_file():
+        raw = self.path_var.get().strip().strip('"').strip("'")
+        try:
+            valido = bool(raw) and Path(raw).is_file()
+        except (OSError, ValueError):
+            valido = False  # nome inválido ou demasiado longo: vale como em branco
+        if not valido:
             messagebox.showwarning(self.T("missing_model_title"), self.T("missing_model"))
             return
         sha = self.hash_var.get().strip() or None
@@ -313,7 +317,8 @@ class App(tk.Tk):
             for linha in detalhe.splitlines()[:12]:
                 self.out.insert("end", f"{linha}\n", "detalhe")
         self.out.configure(state="disabled")
-        self.open_report_btn.configure(state="normal")
+        # Sem relatório escrito (pasta só de leitura) o botão fica desativado.
+        self.open_report_btn.configure(state="normal" if self.report_path else "disabled")
 
     def _paint(self, color):
         for w in (self.result_frame, self.verdict_lbl, self.action_lbl, self.integrity_lbl):
@@ -324,8 +329,14 @@ class App(tk.Tk):
             self._open(self.report_path)
 
     def open_reports_folder(self):
-        core.REPORT_DIR.mkdir(exist_ok=True)
-        self._open(core.REPORT_DIR)
+        # Se os relatórios foram para a pasta temporária (programa numa pasta só
+        # de leitura), abre essa pasta e não uma que ficou vazia.
+        alvo = Path(self.report_path).parent if self.report_path else core.REPORT_DIR
+        try:
+            alvo.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            alvo = core.REPORT_DIR
+        self._open(alvo)
 
     @staticmethod
     def _open(path):
