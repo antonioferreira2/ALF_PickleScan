@@ -1,0 +1,9 @@
+# Normaliza as terminações de linha para o projeto funcionar nas duas plataformas.
+* text=auto
+
+# O script Linux tem de manter LF, senão falha com "/usr/bin/env: bash^M".
+*.sh text eol=lf
+# Os ficheiros de Windows ficam com CRLF.
+*.bat text eol=crlf
+
+*.png binary

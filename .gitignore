@@ -1,0 +1,30 @@
+# Relatórios e configuração local
+ALF_relatorios/
+ALF_whitelist.txt
+
+# Documentos internos e ferramentas de apoio (não publicar)
+_interno/
+
+# Builds do PyInstaller
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Modelos (não se versionam)
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.pkl
+*.onnx
+
+# Sistema
+Thumbs.db
+.DS_Store
