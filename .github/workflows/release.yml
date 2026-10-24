@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Instalar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -68,7 +68,7 @@ jobs:
       # Python 3.11 do setup-python (o picklescan 1.0.5 exige >= 3.11; o python3
       # do Ubuntu 22.04 é 3.10), mantendo a glibc 2.35 do sistema.
       - name: Instalar Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
