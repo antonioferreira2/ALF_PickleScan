@@ -80,6 +80,8 @@ Altre piattaforme: il codice sorgente funziona ovunque siano disponibili Python 
 4. Clicca **Verify model** (Verifica modello).
 5. Leggi il risultato. Clicca **Open report** (Apri rapporto) per tutti i dettagli.
 
+Puoi anche **trascinare il file del modello sull'eseguibile**: la finestra si apre già analizzando quel file. Su Linux, passa il percorso come argomento — `./ALF_picklescan modello.gguf`.
+
 Il rapporto viene salvato accanto al programma, in `ALF_relatorios/`.
 
 Riga di comando (Linux o Windows, con Python installato):

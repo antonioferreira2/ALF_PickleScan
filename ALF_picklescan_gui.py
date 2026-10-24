@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ALF_picklescan - interface gráfica v2.2 (multilingue)
+ALF_picklescan - interface gráfica (multilingue)
 Usa a lógica de verificação de ALF_picklescan.py e as traduções de i18n.py.
+
+Aceita o modelo como argumento, para arrastar um ficheiro para cima do
+executável abrir a janela já a analisá-lo:
+
+    ALF_picklescan.exe modelo.gguf
+    python ALF_picklescan_gui.py modelo.safetensors
 """
 
 import os
@@ -45,8 +51,30 @@ def mono_font(size=9):
     return (family, size)
 
 
+def caminho_inicial(args=None):
+    """Ficheiro de modelo indicado na linha de comandos, se houver um válido.
+
+    No Windows e no Linux, arrastar um ficheiro para cima do executável passa-o
+    como primeiro argumento. Caminhos com espaços chegam por vezes entre aspas,
+    por isso são limpos. Qualquer argumento que não seja um ficheiro existente é
+    ignorado: a janela abre vazia, como sempre, em vez de dar erro.
+    """
+    for bruto in sys.argv[1:] if args is None else args:
+        if not bruto or bruto.startswith("-"):
+            continue
+        candidato = bruto.strip().strip('"').strip("'").strip()
+        if not candidato:
+            continue
+        try:
+            if Path(candidato).is_file():
+                return Path(candidato)
+        except (OSError, ValueError):
+            continue  # nome demasiado longo, caracteres inválidos, etc.
+    return None
+
+
 class App(tk.Tk):
-    def __init__(self):
+    def __init__(self, modelo=None):
         super().__init__()
         self.lang = DEFAULT_LANG
         self.geometry("820x760")
@@ -64,8 +92,13 @@ class App(tk.Tk):
         self.result = None
         self.report_path = None
         self.busy = False
+        self.modelo_inicial = modelo
 
         self._build()
+        if self.modelo_inicial is not None:
+            self.path_var.set(str(self.modelo_inicial))
+            # Deixa a janela desenhar-se antes de mostrar o estado a analisar.
+            self.after(200, self.start)
 
     # ----------------------------------------------------------- utilitários
 
@@ -308,7 +341,7 @@ class App(tk.Tk):
 
 
 def main():
-    App().mainloop()
+    App(caminho_inicial()).mainloop()
 
 
 if __name__ == "__main__":

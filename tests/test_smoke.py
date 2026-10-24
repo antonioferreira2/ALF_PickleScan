@@ -572,6 +572,43 @@ class TestJson(Base):
         self.assertEqual(dados["sha256"], core.sha256_of(p))
 
 
+class TestArranque(unittest.TestCase):
+    """Arrastar um modelo para cima do executável passa-o como argumento."""
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            import ALF_picklescan_gui as gui
+        except Exception as ex:  # tkinter ausente (Linux sem python3-tk)
+            raise unittest.SkipTest(f"interface indisponível: {ex}")
+        cls.gui = gui
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="alf_gui_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.tmp, ignore_errors=True))
+
+    def test_model_path_is_accepted(self):
+        p = write(self.tmp / "modelo.gguf", b"GGUF")
+        self.assertEqual(self.gui.caminho_inicial([str(p)]), p)
+
+    def test_windows_quoted_path_is_cleaned(self):
+        p = write(self.tmp / "com espaco gguf", b"GGUF")
+        self.assertEqual(self.gui.caminho_inicial([f'"{p}"']), p)
+
+    def test_other_arguments_are_ignored(self):
+        p = write(self.tmp / "modelo.pkl", benign_pickle())
+        self.assertEqual(self.gui.caminho_inicial(["--json", str(p)]), p)
+        self.assertIsNone(self.gui.caminho_inicial(["--json", "--lang", "en"]))
+        self.assertIsNone(self.gui.caminho_inicial([]))
+
+    def test_missing_or_folder_argument_opens_empty_window(self):
+        self.assertIsNone(self.gui.caminho_inicial([str(self.tmp / "nao_existe.gguf")]))
+        self.assertIsNone(self.gui.caminho_inicial([str(self.tmp)]))
+
+    def test_odd_argument_does_not_crash(self):
+        self.assertIsNone(self.gui.caminho_inicial(["", '""', "a" * 5000, "\x00"]))
+
+
 class TestI18n(unittest.TestCase):
     def test_every_language_has_every_key(self):
         from i18n import LANGUAGES, STRINGS
