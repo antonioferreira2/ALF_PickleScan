@@ -42,7 +42,7 @@ jobs:
           "$hash  ALF_picklescan-windows-x64.exe" | Out-File -Encoding ascii dist\ALF_picklescan-windows-x64.exe.sha256
 
       - name: Atestar a origem do executável
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dist/ALF_picklescan-windows-x64.exe
 
@@ -87,7 +87,7 @@ jobs:
           sha256sum ALF_picklescan-linux-x86_64 > ALF_picklescan-linux-x86_64.sha256
 
       - name: Atestar a origem do executável
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dist/ALF_picklescan-linux-x86_64
 
