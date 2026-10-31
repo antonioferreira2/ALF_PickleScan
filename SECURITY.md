@@ -37,7 +37,7 @@ sha256sum -c ALF_picklescan-linux-x86_64.sha256
 
 ## Verificar a atestação de origem
 
-O hash diz que o ficheiro não foi alterado depois de publicado. A atestação diz quem o construiu. Os executáveis da v2.5.0 e das releases seguintes trazem uma atestação de proveniência (SLSA) assinada pelo GitHub Actions: liga o ficheiro ao workflow, à tag e ao commit que o geraram.
+O hash confirma que o ficheiro corresponde ao `.sha256` publicado na mesma release. A atestação diz quem o construiu. Os executáveis desde a v2.4.0 trazem uma atestação de proveniência (SLSA) assinada pelo GitHub Actions: liga o ficheiro ao workflow, à tag e ao commit que o geraram. A release v2.1.0 é anterior a isto e só tem o `.sha256`.
 
 Precisa do GitHub CLI 2.49 ou superior, com sessão iniciada (`gh auth login`):
 
@@ -49,4 +49,4 @@ gh attestation verify ALF_picklescan-windows-x64.exe --repo antonioferreira2/ALF
 gh attestation verify ALF_picklescan-linux-x86_64 --repo antonioferreira2/ALF_PickleScan
 ```
 
-A verificação passa se o ficheiro corresponder ao que o workflow construiu. Se o alterares, ou se vier de outro sítio, falha. Usa as duas verificações, hash e atestação: a primeira é mais rápida e a segunda prova a origem.
+A verificação passa se o ficheiro corresponder ao que o workflow construiu. Se o alterares, ou se vier de outro sítio, falha. Prova a origem, não a segurança: um build legítimo pode conter falhas. Usa as duas verificações, hash e atestação: a primeira é mais rápida e a segunda prova a origem.
